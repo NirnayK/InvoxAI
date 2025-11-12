@@ -2,6 +2,9 @@ import Link from "next/link";
 
 import { FileUpload } from "@/components/file-upload";
 
+const MAX_FILES = 10;
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
 export default function NewTaskPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-10">
@@ -82,7 +85,7 @@ export default function NewTaskPage() {
               <p className="text-sm font-semibold text-slate-700">Files</p>
               <p className="text-xs text-slate-500">Drag and drop or click to upload supporting documents.</p>
             </div>
-            <FileUpload maxFiles={10} maxFileSize={50 * 1024 * 1024} />
+            <FileUpload maxFiles={MAX_FILES} maxFileSize={MAX_FILE_SIZE} />
           </div>
 
           <div className="flex justify-end">
