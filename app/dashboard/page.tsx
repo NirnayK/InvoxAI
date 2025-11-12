@@ -60,6 +60,8 @@ const tasks: Task[] = [
   },
 ];
 
+import Link from "next/link";
+
 function TaskList() {
   return (
     <section className="w-full space-y-6">
@@ -72,9 +74,12 @@ function TaskList() {
             Processing Tasks
           </h2>
         </div>
-        <button className="rounded-2xl border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+        <Link
+          href="/new-task"
+          className="rounded-2xl border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+        >
           Create New Task
-        </button>
+        </Link>
       </div>
 
       <TaskTable tasks={tasks} />

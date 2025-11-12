@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AuthButton } from "@/components/auth-button";
 import { ModeToggle } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
+import { FileUploadPanel } from "@/components/file-upload-panel";
 
 export default function Home() {
   return (
@@ -20,13 +21,13 @@ export default function Home() {
           </div>
         </nav>
 
-        <div className="flex-1 w-full flex items-center justify-center">
-          <div className="w-full max-w-3xl flex flex-col gap-10 px-5 text-center items-center">
+        <div className="flex w-full flex-1 items-center justify-center">
+          <div className="w-full max-w-4xl space-y-12 px-5 text-center">
             <div className="space-y-4">
               <h1 className="text-5xl font-semibold tracking-tight leading-tight">
                 Upload invoices, get books ready
               </h1>
-              <p className="text-base text-muted-foreground max-w-2xl">
+              <p className="text-base text-muted-foreground max-w-2xl mx-auto">
                 Drop your PDF or image invoices and let Invox AI read, validate,
                 and prep entries for Tally so your finance team can close faster.
               </p>
@@ -36,6 +37,7 @@ export default function Home() {
                 <Link href="/dashboard">Head to Dashboard</Link>
               </Button>
             </div>
+            <FileUploadPanel />
           </div>
         </div>
       </div>
