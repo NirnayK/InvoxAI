@@ -1,10 +1,10 @@
 "use client";
 
+import { AlertCircle, File as FileIcon, Upload, X } from "lucide-react";
 import type { ChangeEvent, DragEvent } from "react";
 import { useRef, useState } from "react";
-import { AlertCircle, File as FileIcon, Upload, X } from "lucide-react";
 
-import { ALLOWED_EXTENSIONS } from "@/lib/constants/invoice";
+import { ALLOWED_EXTENSIONS } from "@/lib/invoice/constants";
 
 interface FileUploadPanelProps {
   maxFiles?: number;

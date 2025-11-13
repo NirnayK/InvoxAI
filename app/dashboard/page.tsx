@@ -1,5 +1,16 @@
 
 import { Task, TaskTable } from "@/components/tasks/task-table";
+import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Inbox } from "lucide-react";
+import Link from "next/link";
 
 const tasks: Task[] = [
   {
@@ -60,9 +71,8 @@ const tasks: Task[] = [
   },
 ];
 
-import Link from "next/link";
-
 function TaskList() {
+  const hasTasks = tasks.length > 0;
   return (
     <section className="w-full space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -82,7 +92,27 @@ function TaskList() {
         </Link>
       </div>
 
-      <TaskTable tasks={tasks} />
+      {hasTasks ? (
+        <TaskTable tasks={tasks} />
+      ) : (
+        <Empty className="mt-6">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Inbox className="h-6 w-6" />
+            </EmptyMedia>
+            <EmptyTitle>No tasks yet</EmptyTitle>
+            <EmptyDescription>
+              You haven't queued any processing jobs yet. Create your first task
+              to start streaming documents through the pipeline.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button variant="default" asChild>
+              <Link href="/new-task">Create a task</Link>
+            </Button>
+          </EmptyContent>
+        </Empty>
+      )}
     </section>
   );
 }

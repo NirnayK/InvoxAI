@@ -1,6 +1,16 @@
 import Link from "next/link";
 
 import { FileUpload } from "@/components/files/file-upload";
+import { Input } from "@/components/ui/input";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -26,67 +36,71 @@ export default function NewTaskPage() {
           </Link>
         </div>
 
-        <form className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="task-name">
-              Task name
-            </label>
-            <input
-              id="task-name"
-              type="text"
-              placeholder="Monthly reconciliation"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
-            />
-          </div>
+        <form className="space-y-10">
+          <FieldSet>
+            <FieldLegend>Task details</FieldLegend>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="task-name">Task name</FieldLabel>
+                <FieldDescription>Give the task a descriptive title that surfaces in dashboards.</FieldDescription>
+                <Input id="task-name" type="text" autoComplete="off" placeholder="Monthly reconciliation" />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="detail">Description</FieldLabel>
+                <FieldDescription>Share the files, steps, or expected outcomes for this task.</FieldDescription>
+                <textarea
+                  id="detail"
+                  placeholder="Describe the files and actions for this task"
+                  className="border-input text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 min-h-[7.5rem] w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                />
+              </Field>
+            </FieldGroup>
+          </FieldSet>
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="detail">
-              Description
-            </label>
-            <textarea
-              id="detail"
-              placeholder="Describe the files and actions for this task"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
-              rows={4}
-            />
-          </div>
+          <FieldSet>
+            <FieldLegend>Workflow</FieldLegend>
+            <FieldGroup>
+              <div className="grid gap-6 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="source">Data source</FieldLabel>
+                  <FieldDescription>Tell us where the documents or data for this task originate.</FieldDescription>
+                  <select
+                    id="source"
+                    className="border-input text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 h-10 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                  >
+                    <option>Upload pack</option>
+                    <option>API ingestion</option>
+                    <option>Manual review</option>
+                  </select>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="priority">Priority</FieldLabel>
+                  <FieldDescription>Determine where this work should sit in your processing queue.</FieldDescription>
+                  <select
+                    id="priority"
+                    className="border-input text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 h-10 w-full rounded-md border bg-transparent px-3 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                  >
+                    <option>Processing</option>
+                    <option>Priority</option>
+                    <option>Background</option>
+                  </select>
+                </Field>
+              </div>
+            </FieldGroup>
+          </FieldSet>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700" htmlFor="source">
-                Data source
-              </label>
-              <select
-                id="source"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
-              >
-                <option>Upload pack</option>
-                <option>API ingestion</option>
-                <option>Manual review</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700" htmlFor="priority">
-                Priority
-              </label>
-              <select
-                id="priority"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900"
-              >
-                <option>Processing</option>
-                <option>Priority</option>
-                <option>Background</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm font-semibold text-slate-700">Files</p>
-              <p className="text-xs text-slate-500">Drag and drop or click to upload supporting documents.</p>
-            </div>
-            <FileUpload maxFiles={MAX_FILES} maxFileSize={MAX_FILE_SIZE} />
-          </div>
+          <FieldSet>
+            <FieldLegend>Attachments</FieldLegend>
+            <FieldGroup>
+              <Field className="gap-4">
+                <FieldContent>
+                  <FieldLabel>Files</FieldLabel>
+                  <FieldDescription>Drag and drop or click to upload supporting documents.</FieldDescription>
+                </FieldContent>
+                <FileUpload maxFiles={MAX_FILES} maxFileSize={MAX_FILE_SIZE} />
+              </Field>
+            </FieldGroup>
+          </FieldSet>
 
           <div className="flex justify-end">
             <button

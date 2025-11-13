@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
 import { UserMetadata } from "@/lib/models";
+import { createClient } from "@/lib/supabase/client";
 
 interface Props {
   initialUsername?: UserMetadata["username"];
