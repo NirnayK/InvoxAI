@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { FileUpload } from "@/components/file-upload";
+import { FileUpload } from "@/components/files/file-upload";
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 50 * 1024 * 1024;

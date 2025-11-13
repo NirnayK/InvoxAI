@@ -1,9 +1,9 @@
 import Link from "next/link";
 
-import { AuthButton } from "@/components/auth-button";
-import { ModeToggle } from "@/components/theme-switcher";
+import { AuthButton } from "@/components/auth/auth-button";
+import { ModeToggle } from "@/components/theme/theme-switcher";
 import { Button } from "@/components/ui/button";
-import { FileUploadPanel } from "@/components/file-upload-panel";
+import { FileUploadPanel } from "@/components/files/file-upload-panel";
 
 export default function Home() {
   return (

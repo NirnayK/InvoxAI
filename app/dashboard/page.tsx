@@ -1,5 +1,5 @@
 
-import { Task, TaskTable } from "@/components/task-table";
+import { Task, TaskTable } from "@/components/tasks/task-table";
 
 const tasks: Task[] = [
   {

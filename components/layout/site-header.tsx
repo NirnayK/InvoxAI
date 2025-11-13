@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { AuthButton } from "@/components/auth-button";
-import { ModeToggle } from "@/components/theme-switcher";
+import { AuthButton } from "@/components/auth/auth-button";
+import { ModeToggle } from "@/components/theme/theme-switcher";
 
 export function SiteHeader() {
   return (
