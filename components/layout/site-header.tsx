@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { AuthButton } from "@/components/auth/auth-button";
 import { ModeToggle } from "@/components/theme/theme-switcher";
 
 export function SiteHeader() {
@@ -11,8 +10,19 @@ export function SiteHeader() {
           Invox AI
         </Link>
         <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard"
+            className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/new-task"
+            className="text-sm font-medium text-slate-600 transition hover:text-slate-900"
+          >
+            New Task
+          </Link>
           <ModeToggle />
-          <AuthButton />
         </div>
       </div>
     </nav>

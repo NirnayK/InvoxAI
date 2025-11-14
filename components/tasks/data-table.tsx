@@ -94,6 +94,13 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
   });
 
   const isFiltered = table.getState().columnFilters.length > 0;
+  const paginationState = table.getState().pagination;
+  const pageSize = paginationState.pageSize;
+  const pageIndex = paginationState.pageIndex;
+  const totalRows = table.getFilteredRowModel().rows.length;
+  const currentRows = table.getRowModel().rows.length;
+  const firstRow = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
+  const lastRow = totalRows === 0 ? 0 : firstRow + currentRows - 1;
 
   return (
     <Card className="mt-6">
@@ -175,10 +182,16 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
           </Table>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col gap-4 border-t border-slate-100/70 py-4 text-sm text-muted-foreground lg:flex-row lg:items-center lg:justify-between">
-        <div className="text-xs font-semibold text-slate-500">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected
+      <CardFooter className="flex flex-col gap-4 border-t border-slate-100/70 py-4 text-sm text-muted-foreground">
+        <div className="flex w-full flex-wrap items-center gap-4 text-xs font-semibold text-slate-500">
+          <span>
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected
+          </span>
+          <span className="ml-auto text-muted-foreground">
+            Showing {firstRow.toLocaleString()} – {lastRow.toLocaleString()} of{" "}
+            {totalRows.toLocaleString()}
+          </span>
         </div>
         <DataTablePagination table={table} />
       </CardFooter>
@@ -190,24 +203,25 @@ function DataTablePagination({ table }: { table: TanstackTable<Task> }) {
   const pagination = table.getState().pagination;
   const pageSize = pagination.pageSize;
   const pageIndex = pagination.pageIndex;
-  const totalRows = table.getFilteredRowModel().rows.length;
-  const currentRows = table.getRowModel().rows.length;
   const pageCount = table.getPageCount() || 1;
-  const firstRow = totalRows === 0 ? 0 : pageIndex * pageSize + 1;
-  const lastRow = totalRows === 0 ? 0 : firstRow + currentRows - 1;
   const pages = getPaginationPages(pageIndex, pageCount);
   const canPrevious = table.getCanPreviousPage();
   const canNext = table.getCanNextPage();
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-        <Label htmlFor="rows-per-page">Rows per page</Label>
+    <div className="flex w-full flex-wrap items-center gap-4">
+      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+        <Label
+          htmlFor="rows-per-page"
+          className="inline-flex items-center whitespace-nowrap text-xs font-semibold text-slate-500"
+        >
+          Rows per page
+        </Label>
         <Select
           value={String(pageSize)}
           onValueChange={(value) => table.setPageSize(Number(value))}
         >
-          <SelectTrigger id="rows-per-page" className="h-9 w-[120px]">
+          <SelectTrigger id="rows-per-page" className="h-9 w-32">
             <SelectValue placeholder={`${pageSize}`} />
           </SelectTrigger>
           <SelectContent align="start">
@@ -218,12 +232,8 @@ function DataTablePagination({ table }: { table: TanstackTable<Task> }) {
             ))}
           </SelectContent>
         </Select>
-        <span className="ml-auto flex-1 text-right text-xs font-semibold text-muted-foreground">
-          Showing {firstRow.toLocaleString()} – {lastRow.toLocaleString()} of{" "}
-          {totalRows.toLocaleString()}
-        </span>
       </div>
-      <Pagination className="justify-end">
+      <Pagination fullWidth={false} className="ml-auto justify-end">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
