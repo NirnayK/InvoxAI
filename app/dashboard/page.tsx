@@ -1,4 +1,3 @@
-
 import { Task, TaskTable } from "@/components/tasks/task-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -80,9 +79,7 @@ function TaskList() {
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">
             Live queue
           </p>
-          <h2 className="text-3xl font-semibold text-slate-900">
-            Processing Tasks
-          </h2>
+          <h2 className="text-3xl font-semibold text-slate-900">Processing Tasks</h2>
         </div>
         <Link
           href="/new-task"
@@ -102,8 +99,8 @@ function TaskList() {
             </EmptyMedia>
             <EmptyTitle>No tasks yet</EmptyTitle>
             <EmptyDescription>
-              You haven't queued any processing jobs yet. Create your first task
-              to start streaming documents through the pipeline.
+              You haven't queued any processing jobs yet. Create your first task to start streaming
+              documents through the pipeline.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>

@@ -15,11 +15,7 @@ import {
 
 import type { Task } from "./columns";
 
-export function DataTableViewOptions({
-  table,
-}: {
-  table: TanstackTable<Task>;
-}) {
+export function DataTableViewOptions({ table }: { table: TanstackTable<Task> }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

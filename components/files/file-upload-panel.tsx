@@ -45,9 +45,7 @@ export function FileUploadPanel({
 
     for (const file of newFiles) {
       if (file.size > maxFileSize) {
-        setError(
-          `File "${file.name}" exceeds ${Math.round(maxFileSize / 1024 / 1024)}MB limit.`
-        );
+        setError(`File "${file.name}" exceeds ${Math.round(maxFileSize / 1024 / 1024)}MB limit.`);
         continue;
       }
       validFiles.push(file);
@@ -171,9 +169,7 @@ export function FileUploadPanel({
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="text-blue-500">{getFileIcon()}</span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900">
-                      {file.name}
-                    </p>
+                    <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
                     <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
                   </div>
                 </div>

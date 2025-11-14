@@ -31,9 +31,7 @@ const createId = () =>
     : Math.random().toString(36).slice(2);
 
 const buildPathname = (file: File, id: string) => {
-  const extension = file.name.includes(".")
-    ? `.${file.name.split(".").pop()?.toLowerCase()}`
-    : "";
+  const extension = file.name.includes(".") ? `.${file.name.split(".").pop()?.toLowerCase()}` : "";
   return `uploads/${id}${extension}`;
 };
 
@@ -96,9 +94,7 @@ export const useFileUpload = ({
             const percentage =
               typeof event.percentage === "number"
                 ? Math.round(event.percentage)
-                : Math.round(
-                    (event.loaded / ((event.total ?? event.loaded) || 1)) * 100,
-                  );
+                : Math.round((event.loaded / ((event.total ?? event.loaded) || 1)) * 100);
             updateFileEntry(entry.id, { progress: Math.min(100, Math.max(0, percentage)) });
           },
         };

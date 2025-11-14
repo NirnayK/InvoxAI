@@ -13,8 +13,8 @@ export default function Home() {
                 Upload invoices, get books ready
               </h1>
               <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                Drop your PDF or image invoices and let Invox AI read, validate,
-                and prep entries for Tally so your finance team can close faster.
+                Drop your PDF or image invoices and let Invox AI read, validate, and prep entries
+                for Tally so your finance team can close faster.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">

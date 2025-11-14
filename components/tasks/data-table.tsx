@@ -60,11 +60,8 @@ interface DataTableProps {
 
 export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
@@ -109,21 +106,12 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
           <Input
             placeholder="Search task..."
             value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("name")?.setFilterValue(event.target.value)
-            }
+            onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
             className="h-9 w-full max-w-sm"
           />
-          <TaskStatusFilter
-            column={table.getColumn("status")}
-            options={STATUS_OPTIONS}
-          />
+          <TaskStatusFilter column={table.getColumn("status")} options={STATUS_OPTIONS} />
           {isFiltered && (
-            <Button
-              variant="ghost"
-              className="h-9 px-2"
-              onClick={() => table.resetColumnFilters()}
-            >
+            <Button variant="ghost" className="h-9 px-2" onClick={() => table.resetColumnFilters()}>
               Reset
               <X className="ml-2 h-4 w-4" />
             </Button>
@@ -142,10 +130,7 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -154,26 +139,17 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
             <TableBody>
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() ? "selected" : undefined}
-                  >
+                  <TableRow key={row.id} data-state={row.getIsSelected() ? "selected" : undefined}>
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>
@@ -238,9 +214,7 @@ function DataTablePagination({ table }: { table: TanstackTable<Task> }) {
           <PaginationItem>
             <PaginationPrevious
               href="#"
-              className={
-                !canPrevious ? "pointer-events-none opacity-50" : undefined
-              }
+              className={!canPrevious ? "pointer-events-none opacity-50" : undefined}
               onClick={(event) => {
                 event.preventDefault();
                 if (canPrevious) {
@@ -249,15 +223,11 @@ function DataTablePagination({ table }: { table: TanstackTable<Task> }) {
               }}
             />
           </PaginationItem>
-          {renderPaginationItems(pages, pageIndex, (page) =>
-            table.setPageIndex(page)
-          )}
+          {renderPaginationItems(pages, pageIndex, (page) => table.setPageIndex(page))}
           <PaginationItem>
             <PaginationNext
               href="#"
-              className={
-                !canNext ? "pointer-events-none opacity-50" : undefined
-              }
+              className={!canNext ? "pointer-events-none opacity-50" : undefined}
               onClick={(event) => {
                 event.preventDefault();
                 if (canNext) {
@@ -275,7 +245,7 @@ function DataTablePagination({ table }: { table: TanstackTable<Task> }) {
 function renderPaginationItems(
   pages: number[],
   activePage: number,
-  onSelect: (page: number) => void
+  onSelect: (page: number) => void,
 ) {
   const items: React.ReactNode[] = [];
   let previousPage = -1;
@@ -285,7 +255,7 @@ function renderPaginationItems(
       items.push(
         <PaginationItem key={`ellipsis-${page}`}>
           <PaginationEllipsis />
-        </PaginationItem>
+        </PaginationItem>,
       );
     }
 
@@ -302,7 +272,7 @@ function renderPaginationItems(
         >
           {page + 1}
         </PaginationLink>
-      </PaginationItem>
+      </PaginationItem>,
     );
 
     previousPage = page;

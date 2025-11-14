@@ -55,7 +55,9 @@ export function FileList({ files, onClearAll, onRemoveFile, onRetryUpload }: Fil
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-slate-900 dark:text-white">Selected Files ({files.length})</h3>
+        <h3 className="font-semibold text-slate-900 dark:text-white">
+          Selected Files ({files.length})
+        </h3>
         <button
           type="button"
           onClick={onClearAll}
@@ -74,8 +76,12 @@ export function FileList({ files, onClearAll, onRemoveFile, onRetryUpload }: Fil
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <span className="text-slate-400 dark:text-slate-500">{getFileIcon()}</span>
               <div className="min-w-0 space-y-1">
-                <p className="truncate font-medium text-slate-900 dark:text-white">{entry.file.name}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{formatFileSize(entry.file.size)}</p>
+                <p className="truncate font-medium text-slate-900 dark:text-white">
+                  {entry.file.name}
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {formatFileSize(entry.file.size)}
+                </p>
                 {entry.blob?.url && (
                   <a
                     href={entry.blob.url}
@@ -87,17 +93,23 @@ export function FileList({ files, onClearAll, onRemoveFile, onRetryUpload }: Fil
                   </a>
                 )}
                 {entry.status === "error" && (
-                  <p className="text-xs text-red-600 dark:text-red-400">{entry.error ?? "Upload failed"}</p>
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    {entry.error ?? "Upload failed"}
+                  </p>
                 )}
               </div>
             </div>
             <div className="ml-4 flex flex-col items-end gap-2 text-right text-xs">
-              <span className={`flex items-center gap-1 rounded-full px-2 py-1 ${getStatusStyles(entry.status)}`}>
+              <span
+                className={`flex items-center gap-1 rounded-full px-2 py-1 ${getStatusStyles(entry.status)}`}
+              >
                 {getStatusIcon(entry.status)}
                 <span className="capitalize">{entry.status}</span>
               </span>
               {entry.status === "uploading" && typeof entry.progress === "number" && (
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">{entry.progress}%</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {entry.progress}%
+                </span>
               )}
               {entry.status === "error" && (
                 <button

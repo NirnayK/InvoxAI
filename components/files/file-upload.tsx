@@ -33,19 +33,19 @@ export function FileUpload(props: FileUploadProps) {
           className="hidden"
           aria-label="Upload files"
         />
-          <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-3">
-            <button
-              type="button"
-              onClick={openFileDialog}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
-            >
-              <Upload className="h-4 w-4" />
-              Add Files
-            </button>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Max {maxFiles} files • {(maxFileSize / 1024 / 1024).toFixed(0)}MB each
-            </p>
-          </div>
+        <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-3">
+          <button
+            type="button"
+            onClick={openFileDialog}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+          >
+            <Upload className="h-4 w-4" />
+            Add Files
+          </button>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Max {maxFiles} files • {(maxFileSize / 1024 / 1024).toFixed(0)}MB each
+          </p>
+        </div>
       </div>
 
       {error && (

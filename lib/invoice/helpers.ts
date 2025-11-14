@@ -11,7 +11,13 @@ import type {
   UploadedFileRef,
 } from "./types";
 
-export type { ExtractionPayload, InvoiceExtractionResult, InvoiceFileInput, NormalizedFile, UploadedFileRef } from "./types";
+export type {
+  ExtractionPayload,
+  InvoiceExtractionResult,
+  InvoiceFileInput,
+  NormalizedFile,
+  UploadedFileRef,
+} from "./types";
 
 const MIME_BY_EXTENSION: Record<string, string> = {
   ".pdf": "application/pdf",
@@ -70,10 +76,7 @@ export function createBatchLine(upload: UploadedFileRef): string {
       contents: [
         {
           role: "user",
-          parts: [
-            { text: USER_PROMPT },
-            { file_data: { file_name: upload.fileName } },
-          ],
+          parts: [{ text: USER_PROMPT }, { file_data: { file_name: upload.fileName } }],
         },
       ],
       config: BATCH_GENERATION_CONFIG,
@@ -90,7 +93,10 @@ export async function waitForBatchCompletion(
     throw new Error("Batch job response missing name");
   }
   let job = await ai.batches.get({ name: jobName });
-  while (job.state && ["JOB_STATE_QUEUED", "JOB_STATE_PENDING", "JOB_STATE_RUNNING"].includes(job.state)) {
+  while (
+    job.state &&
+    ["JOB_STATE_QUEUED", "JOB_STATE_PENDING", "JOB_STATE_RUNNING"].includes(job.state)
+  ) {
     await delay(pollIntervalMs);
     job = await ai.batches.get({ name: jobName });
   }
@@ -106,7 +112,8 @@ export function parseBatchResults(
     .reduce<Record<string, ExtractionPayload | Record<string, unknown>>>((acc, line, index) => {
       try {
         const obj = JSON.parse(line);
-        const key = typeof obj.key === "string" && obj.key.length > 0 ? obj.key : `line-${index + 1}`;
+        const key =
+          typeof obj.key === "string" && obj.key.length > 0 ? obj.key : `line-${index + 1}`;
         acc[key] = tryParseInvoiceText(extractFirstText(obj.response)) ?? obj;
       } catch (error) {
         acc[`line-${index + 1}`] = {

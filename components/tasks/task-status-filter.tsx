@@ -39,10 +39,7 @@ export function TaskStatusFilter({ column, options }: TaskStatusFilterProps) {
           <Filter className="mr-2 h-4 w-4" />
           Status
           {selectedValues.length > 0 && (
-            <Badge
-              variant="secondary"
-              className="ml-2 rounded-full px-2 py-0 text-[10px]"
-            >
+            <Badge variant="secondary" className="ml-2 rounded-full px-2 py-0 text-[10px]">
               {selectedValues.length}
             </Badge>
           )}

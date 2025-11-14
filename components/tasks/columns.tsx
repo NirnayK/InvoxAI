@@ -34,9 +34,7 @@ export const STATUS_OPTIONS = [
   { label: "In Progress", value: "In Progress" },
 ] as const;
 
-type StatusBadgeVariant = NonNullable<
-  React.ComponentProps<typeof Badge>["variant"]
->;
+type StatusBadgeVariant = NonNullable<React.ComponentProps<typeof Badge>["variant"]>;
 
 const STATUS_VARIANT_MAP: Record<string, StatusBadgeVariant> = {
   Completed: "secondary",
@@ -72,17 +70,13 @@ function TaskRowActions({ task }: { task: Task }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem
-            onClick={() => navigator.clipboard.writeText(task.name)}
-          >
+          <DropdownMenuItem onClick={() => navigator.clipboard.writeText(task.name)}>
             Copy task name
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem>View details</DropdownMenuItem>
           <DropdownMenuItem>Retry task</DropdownMenuItem>
-          <DropdownMenuItem className="text-destructive">
-            Cancel task
-          </DropdownMenuItem>
+          <DropdownMenuItem className="text-destructive">Cancel task</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
@@ -95,8 +89,7 @@ export const columns: ColumnDef<Task>[] = [
     header: ({ table }) => (
       <Checkbox
         checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
+          table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
@@ -116,23 +109,17 @@ export const columns: ColumnDef<Task>[] = [
   },
   {
     accessorKey: "name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Task" />
-    ),
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Task" />,
     cell: ({ row }) => (
       <div className="space-y-1">
-        <p className="text-sm font-semibold text-slate-900">
-          {row.original.name}
-        </p>
+        <p className="text-sm font-semibold text-slate-900">{row.original.name}</p>
         <p className="text-xs text-muted-foreground">{row.original.detail}</p>
       </div>
     ),
   },
   {
     accessorKey: "status",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
-    ),
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
     filterFn: (row, id, value) => {
       if (!value?.length) {
@@ -143,21 +130,13 @@ export const columns: ColumnDef<Task>[] = [
   },
   {
     accessorKey: "files",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Files Uploaded" />
-    ),
-    cell: ({ row }) => (
-      <span className="text-sm text-slate-600">{row.original.files}</span>
-    ),
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Files Uploaded" />,
+    cell: ({ row }) => <span className="text-sm text-slate-600">{row.original.files}</span>,
   },
   {
     accessorKey: "lastActivity",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Last Activity" />
-    ),
-    cell: ({ row }) => (
-      <span className="text-sm text-slate-600">{row.original.lastActivity}</span>
-    ),
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Last Activity" />,
+    cell: ({ row }) => <span className="text-sm text-slate-600">{row.original.lastActivity}</span>,
   },
   {
     id: "actions",

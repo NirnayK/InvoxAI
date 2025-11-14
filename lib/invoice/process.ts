@@ -18,7 +18,7 @@ import {
   parseBatchResults,
   prepareFiles,
   tryParseInvoiceText,
-  waitForBatchCompletion
+  waitForBatchCompletion,
 } from "./helpers";
 
 export type { ExtractionPayload, InvoiceExtractionResult, InvoiceFileInput } from "./helpers";
@@ -31,7 +31,10 @@ interface GeminiGeneratedResult {
 const DEFAULT_MODEL = "gemini-2.5-flash";
 
 class GeminiInvoiceClient {
-  constructor(private readonly ai: GoogleGenAI, private readonly model: string) {}
+  constructor(
+    private readonly ai: GoogleGenAI,
+    private readonly model: string,
+  ) {}
 
   async generate(file: NormalizedFile): Promise<GeminiGeneratedResult> {
     const uploaded = await this.upload(file);
