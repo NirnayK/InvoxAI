@@ -1,0 +1,25 @@
+[package]
+name = "invox_ai"
+version = "0.1.0"
+description = "Desktop shell for the Invox AI workspace"
+authors = ["Invox AI"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = ["macos-private-api"] }
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+
+[profile.dev]
+incremental = true
+debug = 0
+
+[profile.release]
+lto = true
+opt-level = "s"
+panic = "abort"
+codegen-units = 1

@@ -112,7 +112,7 @@ export const columns: ColumnDef<Task>[] = [
     header: ({ column }) => <DataTableColumnHeader column={column} title="Task" />,
     cell: ({ row }) => (
       <div className="space-y-1">
-        <p className="text-sm font-semibold text-slate-900">{row.original.name}</p>
+        <p className="text-sm font-semibold text-foreground">{row.original.name}</p>
         <p className="text-xs text-muted-foreground">{row.original.detail}</p>
       </div>
     ),
@@ -131,12 +131,14 @@ export const columns: ColumnDef<Task>[] = [
   {
     accessorKey: "files",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Files Uploaded" />,
-    cell: ({ row }) => <span className="text-sm text-slate-600">{row.original.files}</span>,
+    cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.original.files}</span>,
   },
   {
     accessorKey: "lastActivity",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Last Activity" />,
-    cell: ({ row }) => <span className="text-sm text-slate-600">{row.original.lastActivity}</span>,
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">{row.original.lastActivity}</span>
+    ),
   },
   {
     id: "actions",

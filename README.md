@@ -1,41 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is the Invox AI workspace shell: a [Next.js 16](https://nextjs.org) frontend wrapped in a Tauri 2 desktop shell powered by `tauri-plugin-sql` and SQLite.
 
-## Getting Started
+## Summary
 
-First, run the development server:
+- **Frontend:** App router (`app/`) with `turbopack`, Tailwind-inspired utilities, and shared UI primitives under `components/ui/`.
+- **Desktop shell:** `src-tauri/` hosts the Rust application that boots Tauri, registers the SQL plugin, and runs migrations before launching the renderer.
+- **Local storage:** `@tauri-apps/plugin-sql` exposes SQLite via `lib/database.ts`, and the Rust migrations ensure `task`, `file`, and `sheets` tables exist with timestamp triggers, default metadata, and simple associations.
+
+## Prerequisites
+
+- Install [pnpm](https://pnpm.io) (this repo assumes it is available).
+- Install the [Tauri CLI](https://tauri.app/v1/guides/getting-started/prerequisites) (`pnpm add -g @tauri-apps/cli` or via cargo).
+- Ensure Rust toolchain (`cargo`, `rustc`) is up to date (1.70+ recommended for Tauri 2).
+
+## Supporting tables (SQLite)
+
+- `task`: stores workflow names, JSON list of associated files (`files_associated` defaults to `[]`), `file_count`, and automatic `created_at`/`updated_at` timestamps.
+- `file`: ties hashes, paths, and parsed results to optional tasks; `file_hash` is unique and the timestamps refresh through triggers.
+- `sheets`: lightweight storage for sheet paths linked to tasks with the same timestamp guarantees.
+- `lib/database.ts` guards access to the SQL plugin so it only runs inside Tauri (`window.__TAURI_INTERNALS__`), loads `sqlite:app.db`, and caches the connection promise for reuse.
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev          # start Next.js + Turbopack on http://localhost:3000
+pnpm tauri:dev    # launches the Tauri desktop shell (runs `pnpm dev` first)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- The desktop shell automatically runs the Rust migrations defined in `src-tauri/src/main.rs`, so the three tables above are created/kept in sync before the renderer runs.
+- If you prefer to iterate in the browser, stop the Tauri CLI and reload `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Building and distributing
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm build         # runs `next build` and `next export` so `out/` contains the static bundle
+pnpm start         # serves the exported bundle on port 3000 for preview
+pnpm tauri:build   # builds the Rust binary (reruns the export via the before-build hook)
+```
 
-## Learn More
+- The Tauri config (`src-tauri/tauri.conf.json`) instructs the CLI to reuse the `out/` folder, set up a 1280×800 window, and bundle for `all` targets with the default icons squeezed into `icons/`.
+- `pnpm start` uses `serve` via `pnpm dlx` so you can preview what the desktop shell will load locally.
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `pnpm dev` — start turbopack-dev Next.js server.
+- `pnpm build` — prepare `out/` as a fully exported static app.
+- `pnpm start` — run a simple server hosting the static export.
+- `pnpm tauri:dev` — spins up Tauri, running the Next.js dev server beforehand.
+- `pnpm tauri:build` — packages the desktop app (runs `pnpm build` first).
+- `pnpm lint` / `pnpm format` — keep code style consistent via ESLint and Prettier.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Repository layout
 
-## Deploy on Vercel
+- `app/` — Next.js App Router entry points, including `app/account` with workspace settings.
+- `components/` — shared UI primitives, layout helpers, and domain-specific features (`files/`, `tasks/`, etc.).
+- `hooks/` — reusable React hooks for mutating state and business logic.
+- `lib/` — runtime helpers (`database.ts`, etc.) that orchestrate platform-specific APIs.
+- `src-tauri/` — Rust crate for the Tauri shell plus migration logic.
+- `proxy.ts` — optional proxy setup if external APIs need rerouting during development.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- The project uses `next export` to satisfy Tauri’s static frontend requirement, so avoid Next.js-only features that need server runtimes (API routes, edge middleware, etc.).
+- You can run `pnpm lint`/`pnpm format` directly or rely on the workspace file for the configured VS Code formatter.
 
-## Formatting
+## Learn more
 
-- Run `pnpm format` to apply Prettier across the repo.
-- The included VS Code workspace file formats with Prettier and organizes imports every time you save.
+- [Tauri documentation](https://tauri.app) – desktop packaging, plugin APIs, and configuration.
+- [tauri-plugin-sql](https://docs.rs/tauri-plugin-sql/latest/tauri_plugin_sql/) – how migrations and the plugin APIs behave.
+- [Next.js App Router](https://nextjs.org/docs/app) – details on server components, loading, and layouts.

@@ -82,16 +82,6 @@ export function FileList({ files, onClearAll, onRemoveFile, onRetryUpload }: Fil
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {formatFileSize(entry.file.size)}
                 </p>
-                {entry.blob?.url && (
-                  <a
-                    href={entry.blob.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-blue-600 hover:underline dark:text-blue-400"
-                  >
-                    View uploaded file
-                  </a>
-                )}
                 {entry.status === "error" && (
                   <p className="text-xs text-red-600 dark:text-red-400">
                     {entry.error ?? "Upload failed"}

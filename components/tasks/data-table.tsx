@@ -158,8 +158,8 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
           </Table>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col gap-4 border-t border-slate-100/70 py-4 text-sm text-muted-foreground">
-        <div className="flex w-full flex-wrap items-center gap-4 text-xs font-semibold text-slate-500">
+      <CardFooter className="flex flex-col gap-4 border-t border-border/60 py-4 text-sm text-muted-foreground">
+        <div className="flex w-full flex-wrap items-center gap-4 text-xs font-semibold text-muted-foreground">
           <span>
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected
@@ -186,10 +186,10 @@ function DataTablePagination({ table }: { table: TanstackTable<Task> }) {
 
   return (
     <div className="flex w-full flex-wrap items-center gap-4">
-      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+      <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
         <Label
           htmlFor="rows-per-page"
-          className="inline-flex items-center whitespace-nowrap text-xs font-semibold text-slate-500"
+          className="inline-flex items-center whitespace-nowrap text-xs font-semibold text-muted-foreground"
         >
           Rows per page
         </Label>

@@ -1,28 +1,15 @@
 "use client";
 
-import type { PutBlobResult } from "@vercel/blob";
-import { upload } from "@vercel/blob/client";
 import type React from "react";
 import { useCallback, useRef, useState } from "react";
 
 import type { UploadEntry } from "./file-upload-types";
-
-type ClientUploadOptions = Parameters<typeof upload>[2];
 
 export interface FileUploadProps {
   maxFiles?: number;
   maxFileSize?: number;
   onFilesChange?: (files: File[]) => void;
   accept?: string;
-  access?: ClientUploadOptions["access"];
-  handleUploadUrl?: string;
-  onUploadedChange?: (uploads: PutBlobResult[]) => void;
-}
-
-interface UploadProgressEvent {
-  loaded: number;
-  total?: number;
-  percentage?: number;
 }
 
 const createId = () =>
@@ -30,104 +17,21 @@ const createId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2);
 
-const buildPathname = (file: File, id: string) => {
-  const extension = file.name.includes(".") ? `.${file.name.split(".").pop()?.toLowerCase()}` : "";
-  return `uploads/${id}${extension}`;
-};
-
 export const useFileUpload = ({
   maxFiles = 10,
   maxFileSize = 100 * 1024 * 1024,
   onFilesChange,
   accept = "*",
-  access = "public",
-  handleUploadUrl = "/api/files/upload",
-  onUploadedChange,
 }: FileUploadProps = {}) => {
   const [files, setFiles] = useState<UploadEntry[]>([]);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const emitUploadedBlobs = useCallback(
-    (entries: UploadEntry[]) => {
-      if (!onUploadedChange) return;
-      const uploaded = entries.flatMap((entry) => (entry.blob ? [entry.blob] : []));
-      onUploadedChange(uploaded);
-    },
-    [onUploadedChange],
-  );
-
-  const updateFileEntry = useCallback(
-    (
-      id: string,
-      changes: Partial<UploadEntry>,
-      { notifyUploaded }: { notifyUploaded?: boolean } = {},
-    ) => {
-      setFiles((prev) => {
-        const updated = prev.map((item) => (item.id === id ? { ...item, ...changes } : item));
-        if (notifyUploaded) {
-          emitUploadedBlobs(updated);
-        }
-        return updated;
-      });
-    },
-    [emitUploadedBlobs],
-  );
-
-  const processEntry = useCallback(
-    async (entry: UploadEntry) => {
-      updateFileEntry(entry.id, {
-        status: "uploading",
-        error: undefined,
-        progress: 0,
-      });
-
-      try {
-        const pathname = buildPathname(entry.file, entry.id);
-        const uploadOptions: Parameters<typeof upload>[2] & {
-          onUploadProgress?: (event: UploadProgressEvent) => void;
-        } = {
-          access,
-          contentType: entry.file.type || "application/octet-stream",
-          handleUploadUrl,
-          onUploadProgress: (event) => {
-            const percentage =
-              typeof event.percentage === "number"
-                ? Math.round(event.percentage)
-                : Math.round((event.loaded / ((event.total ?? event.loaded) || 1)) * 100);
-            updateFileEntry(entry.id, { progress: Math.min(100, Math.max(0, percentage)) });
-          },
-        };
-
-        const blobResult = await upload(pathname, entry.file, uploadOptions);
-
-        updateFileEntry(
-          entry.id,
-          {
-            status: "uploaded",
-            blob: blobResult,
-            progress: 100,
-          },
-          { notifyUploaded: true },
-        );
-      } catch (uploadError) {
-        const message = uploadError instanceof Error ? uploadError.message : "Upload failed";
-
-        updateFileEntry(entry.id, { status: "error", error: message, progress: undefined });
-        setError(message);
-      }
-    },
-    [access, handleUploadUrl, updateFileEntry],
-  );
-
-  const processEntries = useCallback(
-    (entries: UploadEntry[]) => {
-      for (const entry of entries) {
-        void processEntry(entry);
-      }
-    },
-    [processEntry],
-  );
+  const updateFileEntry = useCallback((id: string, changes: Partial<UploadEntry>) => {
+    setFiles((prev) => {
+      return prev.map((item) => (item.id === id ? { ...item, ...changes } : item));
+    });
+  }, []);
 
   const validateFiles = useCallback(
     (newFiles: File[], existingCount: number) => {
@@ -167,7 +71,8 @@ export const useFileUpload = ({
       const newEntries = validFiles.map<UploadEntry>((file) => ({
         id: createId(),
         file,
-        status: "pending",
+        status: "uploaded",
+        progress: 100,
       }));
 
       setFiles((prev) => {
@@ -176,13 +81,11 @@ export const useFileUpload = ({
         return updated;
       });
 
-      processEntries(newEntries);
-
       if (inputRef.current) {
         inputRef.current.value = "";
       }
     },
-    [files.length, onFilesChange, processEntries, validateFiles],
+    [files.length, onFilesChange, validateFiles],
   );
 
   const handleRemoveFile = useCallback(
@@ -194,32 +97,28 @@ export const useFileUpload = ({
         const updated = prev.filter((_, i) => i !== index);
 
         onFilesChange?.(updated.map((item) => item.file));
-        emitUploadedBlobs(updated);
         setError("");
         return updated;
       });
     },
-    [emitUploadedBlobs, onFilesChange],
+    [onFilesChange],
   );
 
   const handleClearFiles = useCallback(() => {
     setFiles([]);
     onFilesChange?.([]);
-    emitUploadedBlobs([]);
     setError("");
-  }, [emitUploadedBlobs, onFilesChange]);
+  }, [onFilesChange]);
 
   const handleRetryUpload = useCallback(
     (entry: UploadEntry) => {
       updateFileEntry(entry.id, {
-        status: "pending",
-        blob: undefined,
+        status: "uploaded",
         error: undefined,
-        progress: undefined,
+        progress: 100,
       });
-      void processEntry(entry);
     },
-    [processEntry, updateFileEntry],
+    [updateFileEntry],
   );
 
   const handleInputChange = useCallback(

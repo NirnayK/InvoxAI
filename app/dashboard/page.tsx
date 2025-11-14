@@ -76,14 +76,14 @@ function TaskList() {
     <section className="w-full space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-muted-foreground">
             Live queue
           </p>
-          <h2 className="text-3xl font-semibold text-slate-900">Processing Tasks</h2>
+          <h2 className="text-3xl font-semibold text-foreground">Processing Tasks</h2>
         </div>
         <Link
           href="/new-task"
-          className="rounded-2xl border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="rounded-2xl border border-border px-5 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
         >
           Create New Task
         </Link>
@@ -99,8 +99,8 @@ function TaskList() {
             </EmptyMedia>
             <EmptyTitle>No tasks yet</EmptyTitle>
             <EmptyDescription>
-              You haven't queued any processing jobs yet. Create your first task to start streaming
-              documents through the pipeline.
+              You have not queued any processing jobs yet. Create your first task to start
+              streaming documents through the pipeline.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
@@ -116,7 +116,7 @@ function TaskList() {
 
 export default function DashboardPage() {
   return (
-    <main className="min-h-screen w-full bg-slate-50">
+    <main className="min-h-screen w-full bg-background">
       <div className="mx-auto flex min-h-screen max-w-7xl px-6 py-10">
         <TaskList />
       </div>

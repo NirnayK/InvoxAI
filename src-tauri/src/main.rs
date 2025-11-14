@@ -1,0 +1,78 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+use tauri_plugin_sql::{Builder as SqlPluginBuilder, Migration, MigrationKind};
+
+fn main() {
+    tauri::Builder::default()
+        .plugin(
+            SqlPluginBuilder::default()
+                .add_migrations("sqlite:app.db", schema_migrations())
+                .build(),
+        )
+        .run(tauri::generate_context!())
+        .expect("error while running Invox AI desktop shell");
+}
+
+fn schema_migrations() -> Vec<Migration> {
+    vec![Migration {
+        version: 1,
+        description: "create core tables".into(),
+        sql: r#"
+            CREATE TABLE IF NOT EXISTS task (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                files_associated TEXT NOT NULL DEFAULT '[]',
+                file_count INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TRIGGER IF NOT EXISTS task_touch_updated_at
+            AFTER UPDATE ON task
+            FOR EACH ROW
+            WHEN NEW.updated_at <= OLD.updated_at
+            BEGIN
+                UPDATE task SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+            END;
+
+            CREATE TABLE IF NOT EXISTS file (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER,
+                filename TEXT NOT NULL,
+                file_hash TEXT NOT NULL UNIQUE,
+                file_path TEXT NOT NULL,
+                parsed_result TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(task_id) REFERENCES task(id) ON DELETE SET NULL
+            );
+
+            CREATE TRIGGER IF NOT EXISTS file_touch_updated_at
+            AFTER UPDATE ON file
+            FOR EACH ROW
+            WHEN NEW.updated_at <= OLD.updated_at
+            BEGIN
+                UPDATE file SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+            END;
+
+            CREATE TABLE IF NOT EXISTS sheets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id INTEGER,
+                sheet_path TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(task_id) REFERENCES task(id) ON DELETE SET NULL
+            );
+
+            CREATE TRIGGER IF NOT EXISTS sheets_touch_updated_at
+            AFTER UPDATE ON sheets
+            FOR EACH ROW
+            WHEN NEW.updated_at <= OLD.updated_at
+            BEGIN
+                UPDATE sheets SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+            END;
+        "#
+        .into(),
+        kind: MigrationKind::Up,
+    }]
+}
