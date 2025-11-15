@@ -6,15 +6,10 @@ mod filesystem;
 mod sql;
 
 use commands::{
-    append_sheet_rows,
-    clear_processed_files,
-    generate_sheet_xlsx,
-    get_storage_stats,
-    import_data,
-    import_file,
-    list_files,
+    append_log_entry, append_sheet_rows, clear_processed_files, generate_sheet_xlsx,
+    get_storage_stats, import_data, import_file, list_files,
 };
-use filesystem::{create_directory, list_directory, read_file, save_file};
+use filesystem::{create_directory, list_directory, read_binary_file, read_file, save_file};
 use sql::schema_migrations;
 use tauri_plugin_dialog::init as DialogPlugin;
 use tauri_plugin_sql::Builder as SqlPluginBuilder;
@@ -31,6 +26,7 @@ fn main() {
         .plugin(StorePluginBuilder::default().build())
         .invoke_handler(tauri::generate_handler![
             list_directory,
+            read_binary_file,
             read_file,
             save_file,
             create_directory,
@@ -39,6 +35,7 @@ fn main() {
             list_files,
             get_storage_stats,
             clear_processed_files,
+            append_log_entry,
             append_sheet_rows,
             generate_sheet_xlsx
         ])

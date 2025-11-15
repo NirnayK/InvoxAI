@@ -7,10 +7,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { createLogger } from "@/lib/logger";
 
 import { FileList } from "./file-list";
 import type { FileUploadProps } from "./use-file-upload";
 import { useFileUpload } from "./use-file-upload";
+
+const fileUploadLogger = createLogger("FileUpload");
 
 export function FileUpload(props: FileUploadProps) {
   const {
@@ -38,11 +41,16 @@ export function FileUpload(props: FileUploadProps) {
       return;
     }
 
-    console.group("[FileUpload]");
-    console.log("files:", files);
-    console.log("error:", error || "none");
-    console.groupEnd();
-  }, [files, error]);
+    const fileNames = files.map((entry) => entry.file.name);
+    fileUploadLogger.debug("File upload state changed", {
+      data: {
+        fileCount: files.length,
+        fileNames,
+        errorMessage: error || undefined,
+      },
+      error: error ? new Error(error) : undefined,
+    });
+  }, [error, files]);
 
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();

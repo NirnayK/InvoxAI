@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/tauri";
-
 import { isTauriRuntime } from "./database";
 
 const ensureTauri = () => {
@@ -15,22 +13,40 @@ export type DirectoryEntry = {
   isFile: boolean;
 };
 
-export async function listDirectory(path?: string) {
+type TauriCoreModule = typeof import("@tauri-apps/api/core");
+
+let tauriCorePromise: Promise<TauriCoreModule> | null = null;
+
+const getTauriCore = async () => {
+  if (!tauriCorePromise) {
+    tauriCorePromise = import("@tauri-apps/api/core");
+  }
+  return tauriCorePromise;
+};
+
+const invokeWithRuntime = async <T>(command: string, payload?: Record<string, unknown>) => {
   ensureTauri();
-  return invoke<DirectoryEntry[]>("list_directory", { path });
+  const { invoke } = await getTauriCore();
+  return invoke<T>(command, payload);
+};
+
+export async function listDirectory(path?: string) {
+  return invokeWithRuntime<DirectoryEntry[]>("list_directory", { path });
 }
 
 export async function readFile(path: string) {
-  ensureTauri();
-  return invoke<string>("read_file", { path });
+  return invokeWithRuntime<string>("read_file", { path });
+}
+
+export async function readFileBinary(path: string) {
+  const bytes = await invokeWithRuntime<number[]>("read_binary_file", { path });
+  return Uint8Array.from(bytes);
 }
 
 export async function saveFile(path: string, contents: string, overwrite = true) {
-  ensureTauri();
-  return invoke<void>("save_file", { path, contents, overwrite });
+  return invokeWithRuntime<void>("save_file", { path, contents, overwrite });
 }
 
 export async function createDirectory(path: string, recursive = true) {
-  ensureTauri();
-  return invoke<void>("create_directory", { path, recursive });
+  return invokeWithRuntime<void>("create_directory", { path, recursive });
 }

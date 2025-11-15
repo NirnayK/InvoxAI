@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { importFiles } from "@/lib/file-import";
 import { isTauriRuntime } from "@/lib/database";
+import { createLogger } from "@/lib/logger";
 import {
   attachSheetToTask,
   createSheet,
@@ -69,6 +70,8 @@ const formatSheetLabel = (date = new Date()) => {
   return `${formatDayWithSuffix(date.getDate())} ${monthName}, ${hours12}.${minutes} ${meridiem}`;
 };
 
+const newTaskLogger = createLogger("NewTaskPage");
+
 export default function NewTaskPage() {
   const [taskName, setTaskName] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -105,7 +108,7 @@ export default function NewTaskPage() {
         setSheets(existing);
       })
       .catch((error) => {
-        console.error("Failed to load sheets", error);
+      newTaskLogger.error("Failed to load sheets", { error });
         if (!cancelled) {
           setStatus({ variant: "error", message: "Unable to load existing sheets." });
         }
@@ -139,7 +142,7 @@ export default function NewTaskPage() {
       setStatus({ variant: "success", message: `Created sheet "${label}".` });
       return created;
     } catch (error) {
-      console.error("Failed to create sheet", error);
+      newTaskLogger.error("Failed to create sheet", { error });
       setStatus({ variant: "error", message: "Unable to create a new sheet. Please try again." });
       return null;
     } finally {
@@ -206,7 +209,7 @@ export default function NewTaskPage() {
       setSelectedSheet(String(sheetId));
       router.push("/dashboard");
     } catch (error) {
-      console.error("Failed to save task", error);
+      newTaskLogger.error("Failed to save task", { error });
       setStatus({
         variant: "error",
         message:

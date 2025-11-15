@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/empty";
 import { isTauriRuntime } from "@/lib/database";
 import { listTasks, type TaskRecord } from "@/lib/tasks";
+import { createLogger } from "@/lib/logger";
 
 const SECOND_MS = 1000;
 const MINUTE_MS = 60 * SECOND_MS;
@@ -122,6 +123,8 @@ const mapTaskRecord = (record: TaskRecord): Task => ({
   status: normalizeTaskStatus(record.status),
 });
 
+const dashboardLogger = createLogger("DashboardPage");
+
 function TaskList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -158,7 +161,7 @@ function TaskList() {
           setTasks(records.map(mapTaskRecord));
         }
       } catch (loadError) {
-        console.error("Failed to load tasks", loadError);
+        dashboardLogger.error("Failed to load tasks", { error: loadError });
         if (!cancelled) {
           setTasks([]);
           setError("Unable to load tasks from the local database.");

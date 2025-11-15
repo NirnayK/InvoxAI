@@ -1,4 +1,4 @@
-import { readBinaryFile } from "@tauri-apps/api/fs";
+import { readFileBinary } from "./filesystem";
 
 import { MIME_BY_EXTENSION } from "@/lib/invoice/constants";
 import type {
@@ -99,7 +99,7 @@ export async function processTaskById(
     const invoiceInputs: InvoiceFileInput[] = [];
 
     for (const [index, file] of orderedFiles.entries()) {
-      const data = await readBinaryFile(file.path);
+      const data = await readFileBinary(file.path);
       const buffer = ensureUint8Array(data);
       const fileName = file.fileName ?? `file-${index + 1}`;
       const mimeType = inferMimeType(file.fileName, file.mimeType);

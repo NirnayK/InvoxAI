@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { clearStoredFiles, getStorageStats, type StorageStats } from "@/lib/storage";
+import { createLogger } from "@/lib/logger";
+import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 
 const STORE_FILE_NAME = "account.preferences.json";
@@ -46,6 +48,8 @@ const formatBytes = (bytes: number) => {
   return `${value.toFixed(1)} ${units[index]}`;
 };
 
+const accountLogger = createLogger("AccountPage");
+
 export default function AccountPage() {
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -69,7 +73,8 @@ export default function AccountPage() {
       const stats = await getStorageStats();
       setStorageStats(stats);
     } catch (error) {
-      console.error("Failed to load storage stats", error);
+      accountLogger.error("Failed to load storage stats", { error });
+      toast.error("Unable to load storage usage. Please try again.");
       setStatusVariant("error");
       setStatusMessage("Unable to load storage usage. Please try again.");
     } finally {
@@ -108,7 +113,8 @@ export default function AccountPage() {
           setGeminiApiKey(storedApiKey);
         }
       } catch (error) {
-        console.error("Failed to load saved account preferences", error);
+        accountLogger.error("Failed to load saved account preferences", { error });
+        toast.error("Could not load saved preferences. Try saving again to recreate them.");
         if (!cancelled) {
           setStatusVariant("error");
           setStatusMessage("Could not load saved preferences. Try saving again to recreate them.");
@@ -153,7 +159,8 @@ export default function AccountPage() {
       setStatusVariant("success");
       setStatusMessage("Account preferences updated.");
     } catch (error) {
-      console.error("Failed to save account preferences", error);
+      accountLogger.error("Failed to save account preferences", { error });
+      toast.error("Unable to save preferences. Please try again.");
       setStatusVariant("error");
       setStatusMessage("Unable to save preferences. Please try again.");
     } finally {
@@ -178,7 +185,8 @@ export default function AccountPage() {
       setStatusVariant("success");
       setStatusMessage("Cleared processed files from local storage.");
     } catch (error) {
-      console.error("Failed to clear stored files", error);
+      accountLogger.error("Failed to clear stored files", { error });
+      toast.error("Unable to free storage. Please try again.");
       setStatusVariant("error");
       setStatusMessage("Unable to free storage. Please try again.");
     } finally {

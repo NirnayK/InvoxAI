@@ -38,6 +38,11 @@ pub fn read_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn read_binary_file(path: String) -> Result<Vec<u8>, String> {
+    fs::read(path).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 pub fn save_file(path: String, contents: String, overwrite: Option<bool>) -> Result<(), String> {
     let target = PathBuf::from(&path);
 

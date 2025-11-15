@@ -6,6 +6,7 @@ import { File, X } from "lucide-react";
 import type { UploadEntry } from "./file-upload-types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { createLogger } from "@/lib/logger";
 
 interface FileListProps {
   files: UploadEntry[];
@@ -41,16 +42,20 @@ const trimFileName = (name: string, maxLength = 22) => {
   return `${base.slice(0, baseLimit)}...${extension}`;
 };
 
+const fileListLogger = createLogger("FileList");
+
 export function FileList({ files, onClearAll, onRemoveFile, onRetryUpload }: FileListProps) {
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") {
       return;
     }
 
-    console.group("[FileList]");
-    console.log("file count:", files.length);
-    console.log("files detail:", files);
-    console.groupEnd();
+    fileListLogger.debug("File list updated", {
+      data: {
+        count: files.length,
+        names: files.map((entry) => entry.file.name),
+      },
+    });
   }, [files]);
 
   if (files.length === 0) {

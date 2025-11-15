@@ -1,5 +1,6 @@
 use crate::db::{get_connection, storage_dir};
 use blake3;
+use chrono::Utc;
 use csv::{ReaderBuilder, WriterBuilder};
 use dirs;
 use rusqlite::{params, Connection, OptionalExtension, Row};
@@ -8,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashSet;
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
@@ -343,10 +344,7 @@ pub fn append_sheet_rows(task_id: i64, rows: Vec<SheetRowInput>) -> Result<Strin
     };
 
     let mut existing_rows = read_sheet_csv(&csv_path)?;
-    let dedupe_ids: HashSet<String> = rows
-        .iter()
-        .filter_map(|row| row.file_id.clone())
-        .collect();
+    let dedupe_ids: HashSet<String> = rows.iter().filter_map(|row| row.file_id.clone()).collect();
 
     if !dedupe_ids.is_empty() {
         existing_rows.retain(|row| match &row.file_id {
@@ -391,7 +389,7 @@ pub fn generate_sheet_xlsx(task_id: i64) -> Result<SheetDownloadResponse, String
     let csv_path = PathBuf::from(&csv_path_str);
     if !csv_path.exists() {
         return Err(
-            "The stored sheet data could not be located. Try running the task again.".to_string()
+            "The stored sheet data could not be located. Try running the task again.".to_string(),
         );
     }
 
@@ -405,10 +403,7 @@ pub fn generate_sheet_xlsx(task_id: i64) -> Result<SheetDownloadResponse, String
     fs::create_dir_all(&download_dir).map_err(|error| error.to_string())?;
 
     let fallback = format!("sheet-{}", sheet.id);
-    let file_name = format!(
-        "{}.xlsx",
-        sanitize_file_name(&sheet.sheet_path, &fallback)
-    );
+    let file_name = format!("{}.xlsx", sanitize_file_name(&sheet.sheet_path, &fallback));
     let xlsx_path = download_dir.join(file_name);
 
     let mut workbook = Workbook::new();
@@ -427,7 +422,7 @@ pub fn generate_sheet_xlsx(task_id: i64) -> Result<SheetDownloadResponse, String
 
     for (col, header) in headers.iter().enumerate() {
         worksheet
-            .write_string(0, col as u16, header)
+            .write_string(0, col as u16, *header)
             .map_err(|error| error.to_string())?;
     }
 
@@ -569,4 +564,60 @@ pub fn clear_processed_files() -> Result<StorageStats, String> {
     }
 
     compute_storage_stats()
+}
+
+fn log_file_path() -> Result<PathBuf, String> {
+    let storage = storage_dir().map_err(|error| error.to_string())?;
+    let app_dir = storage
+        .parent()
+        .map(|parent| parent.to_path_buf())
+        .ok_or_else(|| "Unable to determine application directory for logging.".to_string())?;
+
+    let log_dir = app_dir.join("logs");
+    fs::create_dir_all(&log_dir).map_err(|error| error.to_string())?;
+
+    Ok(log_dir.join("invox.log"))
+}
+
+fn sanitize_log_value(value: &str) -> String {
+    value.replace('\n', "\\n").replace('\r', "\\r")
+}
+
+#[tauri::command]
+pub fn append_log_entry(
+    level: &str,
+    message: &str,
+    context: Option<String>,
+    metadata: Option<String>,
+) -> Result<(), String> {
+    let path = log_file_path()?;
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|error| error.to_string())?;
+
+    let timestamp = Utc::now().to_rfc3339();
+    let level_upper = level.to_uppercase();
+
+    let mut line = format!("{timestamp} [{level_upper}]");
+    if let Some(context) = context {
+        line.push(' ');
+        line.push('(');
+        line.push_str(&sanitize_log_value(&context));
+        line.push(')');
+    }
+    line.push(' ');
+    line.push_str(&sanitize_log_value(message));
+
+    if let Some(metadata) = metadata {
+        let sanitized_metadata = sanitize_log_value(&metadata);
+        if !sanitized_metadata.is_empty() {
+            line.push_str(" :: ");
+            line.push_str(&sanitized_metadata);
+        }
+    }
+
+    writeln!(file, "{line}").map_err(|error| error.to_string())?;
+    Ok(())
 }
