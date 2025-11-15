@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { downloadSheetForTask } from "@/lib/sheets";
 import { processTaskById } from "@/lib/task-processing";
 import { toast } from "sonner";
+import { createLogger } from "@/lib/logger";
 
 import type { Task } from "./columns";
 import { TaskActionProvider, columns } from "./columns";
@@ -15,6 +16,7 @@ export { type Task } from "./columns";
 
 const PROCESSING_DURATION_MS = 60 * 1000;
 const PROGRESS_INTERVAL_MS = 250;
+const downloadLogger = createLogger("SheetDownload");
 
 type ProcessingMode = "process" | "retry";
 
@@ -87,10 +89,20 @@ export function TaskTable({ tasks, onTaskUpdated }: TaskTableProps) {
 
       setDownloadingTaskId(task.id);
       toast("Preparing your sheet download...");
+      downloadLogger.info("Starting sheet download", {
+        data: { taskId: task.id, taskName: task.name },
+      });
       try {
         const result = await downloadSheetForTask(task.id);
+        downloadLogger.info("Sheet download succeeded", {
+          data: { taskId: task.id, rows: result.rows, path: result.path },
+        });
         toast.success(`Copied ${result.rows} row(s) to ${result.path}`);
       } catch (error) {
+        downloadLogger.error("Sheet download failed", {
+          data: { taskId: task.id, taskName: task.name },
+          error,
+        });
         const message =
           error instanceof Error ? error.message : "Failed to download the sheet for this task.";
         toast.error(message);
@@ -128,6 +140,16 @@ export function TaskTable({ tasks, onTaskUpdated }: TaskTableProps) {
 
     let cancelled = false;
 
+    const getFriendlyProcessingError = (error: unknown) => {
+      if (error instanceof Error) {
+        if (error.message.length > 200 || error.message.trim().startsWith("{")) {
+          return "Something went wrong while processing this task.";
+        }
+        return error.message;
+      }
+      return "Something went wrong while processing this task.";
+    };
+
     const run = async () => {
       try {
         await processTaskById(activeTask.taskId, {
@@ -161,10 +183,7 @@ export function TaskTable({ tasks, onTaskUpdated }: TaskTableProps) {
         if (cancelled) {
           return;
         }
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Something went wrong while processing this task.";
+        const message = getFriendlyProcessingError(error);
         setProcessingError(message);
         setModalMessage("Processing failed.");
         setRows((prev) =>

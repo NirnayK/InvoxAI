@@ -131,8 +131,8 @@ fn persist_buffer(file_name: &str, buffer: &[u8]) -> Result<String, String> {
     fs::write(&stored_path, buffer).map_err(|error| error.to_string())?;
 
     conn.execute(
-        "INSERT INTO files (id, hash_sha256, file_name, stored_path, size_bytes)
-         VALUES (?1, ?2, ?3, ?4, ?5)",
+        "INSERT INTO files (id, hash_sha256, file_name, stored_path, size_bytes, parsed_details)
+         VALUES (?1, ?2, ?3, ?4, ?5, NULL)",
         params![
             id,
             hash_hex,

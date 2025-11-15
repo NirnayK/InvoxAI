@@ -18,6 +18,7 @@ import {
   type StoredTaskFile,
   updateTaskStatus,
 } from "./tasks";
+import { createLogger } from "./logger";
 
 const FALLBACK_MIME = "application/octet-stream";
 
@@ -49,6 +50,8 @@ export interface TaskProcessingOptions {
   onStatusUpdate?: (message: string) => void;
 }
 
+const taskProcessingLogger = createLogger("TaskProcessing");
+
 export async function processTaskById(
   taskId: number,
   options?: TaskProcessingOptions,
@@ -58,18 +61,39 @@ export async function processTaskById(
   }
 
   const emit = options?.onStatusUpdate;
+  taskProcessingLogger.debug("Starting task processing", {
+    data: { taskId },
+  });
   emit?.("Loading task details...");
 
   const task = await getTaskDetail(taskId);
   if (!task) {
+    taskProcessingLogger.error("Task missing in local database", { data: { taskId } });
     throw new Error("Task not found in the local database.");
   }
+  taskProcessingLogger.debug("Loaded task details", {
+    data: {
+      taskId: task.id,
+      name: task.name,
+      fileIds: task.fileIds,
+    },
+  });
   if (!task.fileIds.length) {
+    taskProcessingLogger.warn("Task has no attached files", { data: { taskId: task.id } });
     throw new Error("This task has no files to process. Attach files before running it.");
   }
 
   const storedFiles = await getStoredFilesByIds(task.fileIds);
+  taskProcessingLogger.debug("Queried stored files", {
+    data: {
+      requestedFileIds: task.fileIds,
+      retrievedCount: storedFiles.length,
+    },
+  });
   if (!storedFiles.length) {
+    taskProcessingLogger.error("No stored files found for task", {
+      data: { taskId: task.id, fileIds: task.fileIds },
+    });
     throw new Error("Unable to locate the files associated with this task.");
   }
   const storedMap = new Map(storedFiles.map((file) => [file.id, file] as const));
@@ -78,16 +102,25 @@ export async function processTaskById(
     .filter((value): value is StoredTaskFile => Boolean(value));
 
   if (orderedFiles.length !== task.fileIds.length) {
+    taskProcessingLogger.error("Some files referenced by task are missing", {
+      data: {
+        taskId: task.id,
+        requested: task.fileIds,
+        retrieved: orderedFiles.map((file) => file?.id ?? "unknown"),
+      },
+    });
     throw new Error("Some files referenced by this task are missing from local storage.");
   }
 
   const sheetExists = await getSheetByTaskId(taskId);
   if (!sheetExists) {
+    taskProcessingLogger.error("No sheet linked to task", { data: { taskId: task.id } });
     throw new Error("This task is not linked to a sheet. Assign a sheet before processing.");
   }
 
   const apiKey = await getGeminiApiKey();
   if (!apiKey) {
+    taskProcessingLogger.error("Gemini API key missing", { data: { taskId: task.id } });
     throw new Error("Set your Gemini API key in Account preferences before processing tasks.");
   }
 
@@ -101,10 +134,20 @@ export async function processTaskById(
     for (const [index, file] of orderedFiles.entries()) {
       const data = await readFileBinary(file.path);
       const buffer = ensureUint8Array(data);
+      let sourceBuffer: ArrayBuffer;
+      let offset = buffer.byteOffset;
+      if (buffer.buffer instanceof ArrayBuffer) {
+        sourceBuffer = buffer.buffer;
+      } else {
+        const copy = Uint8Array.from(buffer);
+        sourceBuffer = copy.buffer;
+        offset = 0;
+      }
+      const arrayBuffer = sourceBuffer.slice(offset, offset + buffer.byteLength);
       const fileName = file.fileName ?? `file-${index + 1}`;
       const mimeType = inferMimeType(file.fileName, file.mimeType);
       const label = createFileLabel(fileName, file.id);
-      const blob = new File([buffer], fileName, { type: mimeType });
+      const blob = new File([arrayBuffer], fileName, { type: mimeType });
       invoiceInputs.push({ file: blob, mimeType, displayName: label });
       labelToFile.set(label, file);
     }
@@ -149,6 +192,10 @@ export async function processTaskById(
     return { processedFiles: rows.length };
   } catch (error) {
     await updateTaskStatus(taskId, "Failed");
+    taskProcessingLogger.error("Task processing failed", {
+      data: { taskId },
+      error,
+    });
     throw error;
   }
 }

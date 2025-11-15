@@ -15,7 +15,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { isTauriRuntime } from "@/lib/database";
-import { listTasks, type TaskRecord } from "@/lib/tasks";
+import { listTasks, normalizeTaskStatus, type TaskRecord } from "@/lib/tasks";
 import { createLogger } from "@/lib/logger";
 
 const SECOND_MS = 1000;
@@ -85,33 +85,6 @@ const formatRelativeTimeFromTimestamp = (timestamp?: string | null) => {
     return format(Math.round(absDiff / MONTH_MS), "month");
   }
   return format(Math.round(absDiff / YEAR_MS), "year");
-};
-
-const normalizeTaskStatus = (status?: string | null) => {
-  if (!status) {
-    return "Unprocessed";
-  }
-
-  const trimmed = status.trim();
-  if (!trimmed) {
-    return "Unprocessed";
-  }
-
-  const lowered = trimmed.toLowerCase();
-  if (lowered === "completed") {
-    return "Completed";
-  }
-  if (lowered === "failed") {
-    return "Failed";
-  }
-  if (lowered === "processing") {
-    return "Processing";
-  }
-  if (lowered === "cancelled") {
-    return "Cancelled";
-  }
-
-  return "Unprocessed";
 };
 
 const mapTaskRecord = (record: TaskRecord): Task => ({

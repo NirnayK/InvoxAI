@@ -224,7 +224,10 @@ export default function AccountPage() {
                 <Field>
                   <FieldLabel htmlFor="gemini-api-key">Gemini API key</FieldLabel>
                   <FieldDescription>
-                    The key used to authenticate with Google Gemini for generative tasks.
+                  The key used to authenticate with Google Gemini for generative tasks. You can
+                  also set <code>NEXT_PUBLIC_GEMINI_API_KEY</code> (or <code>GEMINI_API_KEY</code> if
+                  you prefer an environment variable) before launching the desktop shell instead
+                  of storing it here.
                   </FieldDescription>
                   <div className="relative">
                     <Input

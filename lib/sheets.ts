@@ -27,7 +27,7 @@ export async function appendSheetRows(taskId: number, rows: SheetRowPayload[]) {
   }
 
   await invoke("append_sheet_rows", {
-    task_id: taskId,
+    taskId,
     rows,
   });
 }

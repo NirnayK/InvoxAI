@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { type ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import * as React from "react";
@@ -82,7 +84,7 @@ function getStatusVariant(status: string): StatusBadgeVariant {
   return STATUS_VARIANT_MAP[status] ?? "default";
 }
 
-function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status }: { status: string }) {
   return (
     <Badge
       variant={getStatusVariant(status)}
@@ -140,7 +142,9 @@ function TaskRowActions({ task }: { task: Task }) {
             Copy task name
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>View details</DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/task?taskId=${task.id}`}>View details</Link>
+          </DropdownMenuItem>
           <DropdownMenuItem
             disabled={downloadDisabled}
             onClick={() => onDownloadSheet(task)}

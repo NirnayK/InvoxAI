@@ -40,6 +40,37 @@ const sanitizeError = (value: unknown) => {
   return value;
 };
 
+const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
+
+const isValidLogLevel = (value: unknown): value is LogLevel => {
+  return value === "debug" || value === "info" || value === "warn" || value === "error";
+};
+
+const getPersistedLogLevel = (): LogLevel | undefined => {
+  if (typeof process === "undefined" || !process.env) {
+    return undefined;
+  }
+
+  const candidate =
+    process.env.NEXT_PUBLIC_PERSIST_LOG_LEVEL ??
+    process.env.NEXT_PUBLIC_LOG_LEVEL ??
+    process.env.LOG_LEVEL;
+  if (isValidLogLevel(candidate)) {
+    return candidate;
+  }
+  return undefined;
+};
+
+const MIN_PERSISTED_LEVEL: LogLevel = getPersistedLogLevel() ?? "info";
+
+const shouldPersistLog = (level: LogLevel) =>
+  LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[MIN_PERSISTED_LEVEL];
+
 const buildMetadata = (details?: LoggerDetails) => {
   if (!details) {
     return undefined;
@@ -80,7 +111,7 @@ const logToConsole = (level: LogLevel, source: string, message: string, details?
     args.push(details.data);
   }
 
-  const method = (consoleAvailable as Record<string, (...values: unknown[]) => void>)[level];
+  const method = (consoleAvailable as unknown as Record<string, (...values: unknown[]) => void>)[level];
   (method ?? consoleAvailable.log).apply(consoleAvailable, args);
 };
 
@@ -122,6 +153,10 @@ export interface Logger {
 export const createLogger = (source: string): Logger => {
   const send = (level: LogLevel, message: string, details?: LoggerDetails) => {
     logToConsole(level, source, message, details);
+    if (!shouldPersistLog(level)) {
+      return;
+    }
+
     const metadata = buildMetadata(details);
     const payload: LoggerPayload = {
       level,

@@ -1,14 +1,17 @@
 use std::fs;
 use std::path::PathBuf;
-
 use rusqlite::{Connection, Error as SqlError, Result as SqlResult};
 
-const APP_DIR_NAME: &str = "invox_ai";
+const APP_DIR_NAME: &str = "com.invox.ai";
 const DB_FILE_NAME: &str = "app.db";
 
-fn app_data_dir() -> PathBuf {
+fn base_data_dir() -> PathBuf {
     let base = dirs::data_dir().unwrap_or_else(|| std::env::current_dir().unwrap());
-    base.join(APP_DIR_NAME)
+    base
+}
+
+fn app_data_dir() -> PathBuf {
+    base_data_dir().join(APP_DIR_NAME)
 }
 
 fn ensure_dirs() -> std::io::Result<PathBuf> {
@@ -50,7 +53,7 @@ fn init_schema(conn: &Connection) -> SqlResult<()> {
           name TEXT NOT NULL,
           files_associated TEXT NOT NULL DEFAULT '[]',
           file_count INTEGER NOT NULL DEFAULT 0,
-          status TEXT NOT NULL DEFAULT 'Processing',
+          status TEXT NOT NULL DEFAULT 'Pending',
           created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
           updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
@@ -70,6 +73,7 @@ fn init_schema(conn: &Connection) -> SqlResult<()> {
           stored_path TEXT NOT NULL,
           size_bytes INTEGER NOT NULL,
           mime_type TEXT,
+          parsed_details TEXT,
           created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -92,10 +96,6 @@ fn init_schema(conn: &Connection) -> SqlResult<()> {
         BEGIN
           UPDATE sheets SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
         END;
-
-        DROP INDEX IF EXISTS sheet_rows_sheet_idx;
-        DROP INDEX IF EXISTS sheet_rows_task_idx;
-        DROP TABLE IF EXISTS sheet_rows;
 
         "#,
     )?;

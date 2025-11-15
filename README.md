@@ -55,6 +55,13 @@ These commands allow the frontend to interact with the local filesystem, manage 
     ```
     This will launch the Tauri desktop application, which will load the Next.js development server.
 
+## Gemini API Key
+
+Processing any invoices requires a Google Gemini API key. Store it via the desktop Account
+preferences page or provide it through the `NEXT_PUBLIC_GEMINI_API_KEY` (and optional
+`GEMINI_API_KEY`) environment variables before running `pnpm tauri:dev` / `pnpm tauri:build`. The
+desktop shell will fall back to those values if a stored preference is missing.
+
 ## Building and Distributing
 
 1.  **Build the application:**
@@ -77,6 +84,10 @@ These commands allow the frontend to interact with the local filesystem, manage 
 - `pnpm tauri:build`: Build the Tauri desktop application.
 - `pnpm lint`: Lint the codebase with ESLint.
 - `pnpm format`: Format the codebase with Prettier.
+
+## Logging
+
+Debug-level entries are no longer persisted to `invox.log` by default to keep the file sensible; only `info`, `warn`, and `error` levels are recorded unless you opt in. Set `NEXT_PUBLIC_PERSIST_LOG_LEVEL=debug` before running `pnpm tauri:dev` or `pnpm tauri:build` if you need the extra detail, and the same value will also work for the `NEXT_PUBLIC_LOG_LEVEL` or `LOG_LEVEL` fallbacks.
 
 ## Repository Layout
 

@@ -38,6 +38,8 @@ interface FileRow {
   file_name: string;
   stored_path: string;
   mime_type: string | null;
+  size_bytes: number;
+  created_at: string;
 }
 
 export interface TaskDetail extends TaskRecord {
@@ -49,6 +51,12 @@ export interface StoredTaskFile {
   fileName: string;
   path: string;
   mimeType: string | null;
+  sizeBytes: number;
+  createdAt: string;
+}
+
+export interface TaskFileDetail extends StoredTaskFile {
+  status: string;
 }
 
 const requireInsertId = (result: { lastInsertId?: number }, entity: string) => {
@@ -169,7 +177,7 @@ export async function getStoredFilesByIds(ids: string[]): Promise<StoredTaskFile
   const db = await getDatabase();
   const placeholders = ids.map((_, index) => `?${index + 1}`).join(", ");
   const rows = await db.select<FileRow[]>(
-    `SELECT id, file_name, stored_path, mime_type FROM files WHERE id IN (${placeholders})`,
+    `SELECT id, file_name, stored_path, mime_type, size_bytes, created_at FROM files WHERE id IN (${placeholders})`,
     ids,
   );
   return rows.map((row) => ({
@@ -177,7 +185,58 @@ export async function getStoredFilesByIds(ids: string[]): Promise<StoredTaskFile
     fileName: row.file_name,
     path: row.stored_path,
     mimeType: row.mime_type,
+    sizeBytes: row.size_bytes,
+    createdAt: row.created_at,
   }));
+}
+
+export async function getTaskWithFiles(
+  taskId: number,
+): Promise<{ detail: TaskDetail; files: TaskFileDetail[] } | null> {
+  const detail = await getTaskDetail(taskId);
+  if (!detail) {
+    return null;
+  }
+
+  const storedFiles = await getStoredFilesByIds(detail.fileIds);
+  const storedMap = new Map<string, StoredTaskFile>(storedFiles.map((file) => [file.id, file]));
+
+  const orderedFiles = detail.fileIds
+    .map((id) => storedMap.get(id))
+    .filter((value): value is StoredTaskFile => Boolean(value))
+    .map((file) => ({
+      ...file,
+      status: detail.status,
+    }));
+
+  return { detail, files: orderedFiles };
+}
+
+export function normalizeTaskStatus(status?: string | null) {
+  if (!status) {
+    return "Unprocessed";
+  }
+
+  const trimmed = status.trim();
+  if (!trimmed) {
+    return "Unprocessed";
+  }
+
+  const lowered = trimmed.toLowerCase();
+  if (lowered === "completed") {
+    return "Completed";
+  }
+  if (lowered === "failed") {
+    return "Failed";
+  }
+  if (lowered === "processing") {
+    return "Processing";
+  }
+  if (lowered === "cancelled") {
+    return "Cancelled";
+  }
+
+  return "Unprocessed";
 }
 
 export async function getSheetByTaskId(taskId: number): Promise<SheetRecord | null> {
