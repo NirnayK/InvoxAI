@@ -15,9 +15,19 @@ This is the Invox AI workspace shell: a [Next.js 16](https://nextjs.org) fronten
 ## Supporting tables (SQLite)
 
 - `task`: stores workflow names, JSON list of associated files (`files_associated` defaults to `[]`), `file_count`, and automatic `created_at`/`updated_at` timestamps.
-- `file`: ties hashes, paths, and parsed results to optional tasks; `file_hash` is unique and the timestamps refresh through triggers.
-- `sheets`: lightweight storage for sheet paths linked to tasks with the same timestamp guarantees.
+- `files`: stores UUID primary key, unique SHA-256 hash, file name, stored path, size, optional MIME type, and `created_at`; an index on `hash_sha256` keeps lookups fast.
+- `sheets`: lightweight storage for sheet paths (`sheet_path`) and their originating file locations (`sheet_file_path`) linked to tasks while keeping timestamp triggers for `created_at`/`updated_at`.
 - `lib/database.ts` guards access to the SQL plugin so it only runs inside Tauri (`window.__TAURI_INTERNALS__`), loads `sqlite:app.db`, and caches the connection promise for reuse.
+
+## Filesystem integration
+
+- `src-tauri/src/main.rs` now exposes `list_directory`, `read_file`, `save_file`, and `create_directory`, each of which uses `std::fs` and returns safe DTOs so the renderer can navigate, read, and write local storage without bundling Node APIs into the browser bundle.
+- `lib/filesystem.ts` wraps those commands through `@tauri-apps/api/tauri.invoke`, guards them with `isTauriRuntime()`, and exposes helper functions that front-end code can call when it needs to probe the workspace directory, surface file contents, or persist parsed artifacts.
+
+## File-import commands
+
+- `src-tauri/src/db.rs` calculates the Tauri data directory, creates an `app.db` plus a `files` storage directory, and hands back a `rusqlite::Connection`.
+- `src-tauri/src/commands.rs` adds `import_file` and `list_files`. `import_file` digests a file from disk, hashes it with BLAKE3, deduplicates, copies it into the `files/` storage folder, and inserts tracking rows; `list_files` streams the most recent 50 rows back to the renderer so the UI can show what’s already imported.
 
 ## Local development
 
@@ -57,7 +67,6 @@ pnpm tauri:build   # builds the Rust binary (reruns the export via the before-bu
 - `hooks/` — reusable React hooks for mutating state and business logic.
 - `lib/` — runtime helpers (`database.ts`, etc.) that orchestrate platform-specific APIs.
 - `src-tauri/` — Rust crate for the Tauri shell plus migration logic.
-- `proxy.ts` — optional proxy setup if external APIs need rerouting during development.
 
 ## Notes
 

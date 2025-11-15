@@ -1,6 +1,12 @@
 "use client";
 
-import { AlertCircle, Upload } from "lucide-react";
+import { type ChangeEvent, type DragEvent, type KeyboardEvent } from "react";
+import { Upload } from "lucide-react";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 import { FileList } from "./file-list";
 import type { FileUploadProps } from "./use-file-upload";
@@ -21,38 +27,73 @@ export function FileUpload(props: FileUploadProps) {
     handleInputChange,
   } = useFileUpload(props);
 
+  const dropZoneState = cn(
+    "group relative flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-6 py-10 text-center transition",
+    "hover:border-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+    files.length === 0 ? "bg-background" : "bg-card/60",
+  );
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (event.dataTransfer?.files) {
+      const syntheticEvent = {
+        target: { files: event.dataTransfer.files },
+      } as ChangeEvent<HTMLInputElement>;
+      handleInputChange(syntheticEvent);
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openFileDialog();
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-300 bg-white p-8 text-center shadow-sm dark:border-slate-600 dark:bg-slate-900/50">
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          accept={accept}
-          onChange={handleInputChange}
-          className="hidden"
-          aria-label="Upload files"
-        />
-        <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-3">
-          <button
-            type="button"
+    <div className="space-y-4">
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        accept={accept}
+        onChange={handleInputChange}
+        className="hidden"
+        aria-label="Upload files"
+      />
+
+      <Card className="rounded-[22px] border-dashed border-border/60 bg-card/80 shadow-none">
+        <CardContent className="px-4 py-6">
+          <div
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onDrop={handleDrop}
+            className={dropZoneState}
+            role="button"
+            tabIndex={0}
             onClick={openFileDialog}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800"
+            onKeyDown={handleKeyDown}
           >
-            <Upload className="h-4 w-4" />
-            Add Files
-          </button>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Max {maxFiles} files • {(maxFileSize / 1024 / 1024).toFixed(0)}MB each
-          </p>
-        </div>
-      </div>
+            <Upload className="size-4 text-primary" />
+            <p className="text-sm font-semibold text-foreground">Drag files here or click to add</p>
+            <p className="text-xs text-muted-foreground">
+              Max {maxFiles} files • {(maxFileSize / 1024 / 1024).toFixed(0)}MB each
+            </p>
+            <Button variant="outline" className="mt-2">
+              Browse files
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {error && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/20">
-          <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
-          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <FileList

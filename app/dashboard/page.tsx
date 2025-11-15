@@ -99,8 +99,8 @@ function TaskList() {
             </EmptyMedia>
             <EmptyTitle>No tasks yet</EmptyTitle>
             <EmptyDescription>
-              You have not queued any processing jobs yet. Create your first task to start
-              streaming documents through the pipeline.
+              You have not queued any processing jobs yet. Create your first task to start streaming
+              documents through the pipeline.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
