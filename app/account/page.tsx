@@ -1,7 +1,7 @@
 "use client";
 
 import type { Store as AccountStore } from "@tauri-apps/plugin-store";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,11 +13,11 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { CircleFadingArrowUpIcon, Eye, EyeOff } from "lucide-react";
+import { clearStoredFiles, getStorageStats, type StorageStats } from "@/lib/storage";
+import { Eye, EyeOff } from "lucide-react";
 
 const STORE_FILE_NAME = "account.preferences.json";
 const GEMINI_KEY_PREF_KEY = "geminiApiKey";
-const FILE_LOCATION_PREF_KEY = "fileStorageLocation";
 
 type StatusVariant = "info" | "success" | "error";
 
@@ -36,24 +36,46 @@ function hasTauriRuntime() {
   return Boolean(win.__TAURI_INTERNALS__ ?? win.__TAURI__ ?? win.__TAURI_IPC__);
 }
 
-function ButtonIcon() {
-  return (
-    <Button variant="ghost" size="icon" aria-label="Toggle preferences">
-      <CircleFadingArrowUpIcon />
-    </Button>
-  );
-}
+const formatBytes = (bytes: number) => {
+  if (bytes === 0) {
+    return "0 B";
+  }
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const index = Math.floor(Math.log(bytes) / Math.log(1024));
+  const value = bytes / Math.pow(1024, index);
+  return `${value.toFixed(1)} ${units[index]}`;
+};
 
 export default function AccountPage() {
   const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [fileLocation, setFileLocation] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [isSelectingFolder, setIsSelectingFolder] = useState(false);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusVariant, setStatusVariant] = useState<StatusVariant>("info");
   const [defaultStatus, setDefaultStatus] = useState("Changes are saved locally for now.");
+  const [tauriAvailable, setTauriAvailable] = useState(false);
+  const [storageStats, setStorageStats] = useState<StorageStats | null>(null);
+  const [isLoadingStorage, setIsLoadingStorage] = useState(false);
+  const [isClearingStorage, setIsClearingStorage] = useState(false);
   const storeRef = useRef<AccountStore | null>(null);
+
+  const refreshStorageStats = useCallback(async () => {
+    if (!hasTauriRuntime()) {
+      setStorageStats(null);
+      return;
+    }
+    setIsLoadingStorage(true);
+    try {
+      const stats = await getStorageStats();
+      setStorageStats(stats);
+    } catch (error) {
+      console.error("Failed to load storage stats", error);
+      setStatusVariant("error");
+      setStatusMessage("Unable to load storage usage. Please try again.");
+    } finally {
+      setIsLoadingStorage(false);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +87,7 @@ export default function AccountPage() {
           ? "Preferences are stored securely on this device."
           : "Run the desktop shell to persist these settings between sessions.",
       );
+      setTauriAvailable(runningInTauri);
 
       if (!runningInTauri) {
         return;
@@ -79,20 +102,10 @@ export default function AccountPage() {
 
         storeRef.current = store;
 
-        const [storedApiKey, storedPath] = await Promise.all([
-          store.get<string>(GEMINI_KEY_PREF_KEY),
-          store.get<string>(FILE_LOCATION_PREF_KEY),
-        ]);
+        const storedApiKey = await store.get<string>(GEMINI_KEY_PREF_KEY);
 
-        if (cancelled) {
-          return;
-        }
-
-        if (storedApiKey) {
+        if (!cancelled && storedApiKey) {
           setGeminiApiKey(storedApiKey);
-        }
-        if (storedPath) {
-          setFileLocation(storedPath);
         }
       } catch (error) {
         console.error("Failed to load saved account preferences", error);
@@ -110,6 +123,13 @@ export default function AccountPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!tauriAvailable) {
+      return;
+    }
+    refreshStorageStats();
+  }, [tauriAvailable, refreshStorageStats]);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!storeRef.current) {
@@ -122,18 +142,11 @@ export default function AccountPage() {
     try {
       const store = storeRef.current;
       const sanitizedKey = geminiApiKey.trim();
-      const sanitizedPath = fileLocation.trim();
 
       if (sanitizedKey) {
         await store.set(GEMINI_KEY_PREF_KEY, sanitizedKey);
       } else {
         await store.delete(GEMINI_KEY_PREF_KEY);
-      }
-
-      if (sanitizedPath) {
-        await store.set(FILE_LOCATION_PREF_KEY, sanitizedPath);
-      } else {
-        await store.delete(FILE_LOCATION_PREF_KEY);
       }
 
       await store.save();
@@ -148,44 +161,30 @@ export default function AccountPage() {
     }
   }
 
-  async function handleChooseFileLocation() {
+  const handleFreeStorage = useCallback(async () => {
     if (!hasTauriRuntime()) {
       setStatusVariant("info");
-      setStatusMessage("Folder picker is only available in the desktop shell.");
+      setStatusMessage("Storage management is only available in the desktop shell.");
       return;
     }
-    if (isSelectingFolder) {
+    if (isClearingStorage) {
       return;
     }
 
-    setIsSelectingFolder(true);
-
+    setIsClearingStorage(true);
     try {
-      const { open } = await import("@tauri-apps/plugin-dialog");
-      const selection = await open({
-        directory: true,
-        multiple: false,
-        title: "Select a folder for storing Invox files",
-        defaultPath: fileLocation || undefined,
-      });
-
-      if (!selection) {
-        return;
-      }
-
-      const chosenPath = Array.isArray(selection) ? selection[0] : selection;
-      if (typeof chosenPath === "string") {
-        setFileLocation(chosenPath);
-        setStatusMessage(null);
-      }
+      const stats = await clearStoredFiles();
+      setStorageStats(stats);
+      setStatusVariant("success");
+      setStatusMessage("Cleared processed files from local storage.");
     } catch (error) {
-      console.error("Failed to select folder", error);
+      console.error("Failed to clear stored files", error);
       setStatusVariant("error");
-      setStatusMessage("Unable to open the folder picker. Enter the path manually.");
+      setStatusMessage("Unable to free storage. Please try again.");
     } finally {
-      setIsSelectingFolder(false);
+      setIsClearingStorage(false);
     }
-  }
+  }, [isClearingStorage]);
 
   const statusClasses =
     statusVariant === "success"
@@ -205,7 +204,7 @@ export default function AccountPage() {
               </p>
               <h1 className="text-3xl font-semibold text-foreground">Workspace preferences</h1>
               <p className="text-sm text-muted-foreground">
-                Manage the credentials and storage details used by automation tasks.
+                Manage the credentials used by automation tasks.
               </p>
             </div>
           </div>
@@ -239,40 +238,56 @@ export default function AccountPage() {
                     </button>
                   </div>
                 </Field>
-                <Field>
-                  <FieldLabel htmlFor="file-storage-location">File storage location</FieldLabel>
-                  <FieldDescription>
-                    Enter the folder path on this computer that will be used to store and manage the
-                    PDF or image file data for post-processing (for example,
-                    <code className="mx-1 rounded bg-muted px-1 py-0.5 text-xs">
-                      /Users/me/Invox
-                    </code>
-                    or
-                    <code className="mx-1 rounded bg-muted px-1 py-0.5 text-xs">C:\data\invox</code>
-                    ).
-                  </FieldDescription>
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <Input
-                      id="file-storage-location"
-                      type="text"
-                      autoComplete="off"
-                      value={fileLocation}
-                      onChange={(event) => setFileLocation(event.target.value)}
-                      placeholder="s3://bucket/path or /workspace/data"
-                      className="sm:flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="shrink-0 sm:w-auto"
-                      onClick={handleChooseFileLocation}
-                      disabled={isSelectingFolder}
-                    >
-                      {isSelectingFolder ? "Selecting..." : "Choose folder"}
-                    </Button>
-                  </div>
-                </Field>
               </FieldGroup>
+            </FieldSet>
+
+            <FieldSet className="space-y-8">
+              <FieldLegend>Storage</FieldLegend>
+              <Field>
+                <FieldLabel>Local storage usage</FieldLabel>
+                <FieldDescription>
+                  Files imported for processing are cached inside the Invox desktop data directory.
+                  Only documents attached to completed tasks are eligible for cleanup.
+                </FieldDescription>
+                <div className="rounded-2xl border border-dashed border-border/70 bg-card/70 px-4 py-3 text-sm">
+                  {tauriAvailable ? (
+                    <>
+                      <p className="font-mono text-xs text-muted-foreground break-all">
+                        {storageStats?.path ?? "Calculating..."}
+                      </p>
+                      <p className="mt-2 text-muted-foreground">
+                        {isLoadingStorage
+                          ? "Calculating usage..."
+                          : `${storageStats?.fileCount ?? 0} file${
+                              (storageStats?.fileCount ?? 0) === 1 ? "" : "s"
+                            } • ${formatBytes(storageStats?.totalBytes ?? 0)}`}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">
+                      Storage details are available when running the desktop shell.
+                    </p>
+                  )}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleFreeStorage}
+                    disabled={!tauriAvailable || isClearingStorage}
+                  >
+                    {isClearingStorage ? "Clearing..." : "Free storage"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={refreshStorageStats}
+                    disabled={!tauriAvailable || isLoadingStorage || isClearingStorage}
+                  >
+                    {isLoadingStorage ? "Refreshing..." : "Refresh"}
+                  </Button>
+                </div>
+              </Field>
             </FieldSet>
 
             <div className="flex items-center gap-4">

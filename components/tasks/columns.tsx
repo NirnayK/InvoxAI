@@ -31,6 +31,7 @@ export const STATUS_OPTIONS = [
   { label: "Failed", value: "Failed" },
   { label: "Cancelled", value: "Cancelled" },
   { label: "Queued", value: "Queued" },
+  { label: "Processing", value: "Processing" },
   { label: "In Progress", value: "In Progress" },
 ] as const;
 

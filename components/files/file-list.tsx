@@ -1,8 +1,11 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, File, Loader2, Upload, X } from "lucide-react";
+import { useEffect } from "react";
+import { File, X } from "lucide-react";
 
-import type { UploadEntry, UploadStatus } from "./file-upload-types";
+import type { UploadEntry } from "./file-upload-types";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 interface FileListProps {
   files: UploadEntry[];
@@ -19,35 +22,37 @@ const formatFileSize = (bytes: number): string => {
   return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
 };
 
-const getStatusStyles = (status: UploadStatus) => {
-  switch (status) {
-    case "uploaded":
-      return "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300";
-    case "uploading":
-      return "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200";
-    case "error":
-      return "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300";
-    default:
-      return "bg-slate-100 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300";
-  }
-};
-
-const getStatusIcon = (status: UploadStatus) => {
-  switch (status) {
-    case "uploaded":
-      return <CheckCircle2 className="h-4 w-4" />;
-    case "uploading":
-      return <Loader2 className="h-4 w-4 animate-spin" />;
-    case "error":
-      return <AlertCircle className="h-4 w-4" />;
-    default:
-      return <Upload className="h-4 w-4" />;
-  }
-};
-
 const getFileIcon = () => <File className="h-4 w-4" />;
 
+const trimFileName = (name: string, maxLength = 22) => {
+  if (name.length <= maxLength) {
+    return name;
+  }
+
+  const extIndex = name.lastIndexOf(".");
+  const extension = extIndex !== -1 ? name.slice(extIndex) : "";
+  const base = extIndex !== -1 ? name.slice(0, extIndex) : name;
+  const baseLimit = maxLength - extension.length - 3;
+
+  if (baseLimit <= 0) {
+    return `${name.slice(0, maxLength - 3)}...`;
+  }
+
+  return `${base.slice(0, baseLimit)}...${extension}`;
+};
+
 export function FileList({ files, onClearAll, onRemoveFile, onRetryUpload }: FileListProps) {
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") {
+      return;
+    }
+
+    console.group("[FileList]");
+    console.log("file count:", files.length);
+    console.log("files detail:", files);
+    console.groupEnd();
+  }, [files]);
+
   if (files.length === 0) {
     return null;
   }
@@ -58,69 +63,64 @@ export function FileList({ files, onClearAll, onRemoveFile, onRetryUpload }: Fil
         <h3 className="font-semibold text-slate-900 dark:text-white">
           Selected Files ({files.length})
         </h3>
-        <button
-          type="button"
+        <Button
+          variant="link"
+          size="sm"
+          className="text-slate-500 dark:text-slate-300"
           onClick={onClearAll}
-          className="text-sm text-slate-600 transition-colors hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
         >
           Clear all
-        </button>
+        </Button>
       </div>
 
-      <div className="space-y-2">
+      <div className="flex flex-wrap gap-3">
         {files.map((entry, index) => (
-          <div
+          <Card
             key={entry.id}
-            className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-900/50"
+            className="flex flex-none w-full max-w-[250px] flex-col !gap-3 rounded-2xl border border-slate-200 bg-white px-4 !py-4 text-left shadow-sm transition-shadow hover:shadow-lg dark:border-slate-700/80 dark:bg-slate-900/50"
           >
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="text-slate-400 dark:text-slate-500">{getFileIcon()}</span>
-              <div className="min-w-0 space-y-1">
-                <p className="truncate font-medium text-slate-900 dark:text-white">
-                  {entry.file.name}
-                </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {formatFileSize(entry.file.size)}
-                </p>
-                {entry.status === "error" && (
-                  <p className="text-xs text-red-600 dark:text-red-400">
-                    {entry.error ?? "Upload failed"}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <span className="text-slate-400 dark:text-slate-500">{getFileIcon()}</span>
+                <div className="min-w-0">
+                  <p
+                    title={entry.file.name}
+                    className="truncate text-sm font-semibold text-slate-900 dark:text-white"
+                  >
+                    {trimFileName(entry.file.name)}
                   </p>
-                )}
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {formatFileSize(entry.file.size)}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="ml-4 flex flex-col items-end gap-2 text-right text-xs">
-              <span
-                className={`flex items-center gap-1 rounded-full px-2 py-1 ${getStatusStyles(entry.status)}`}
-              >
-                {getStatusIcon(entry.status)}
-                <span className="capitalize">{entry.status}</span>
-              </span>
-              {entry.status === "uploading" && typeof entry.progress === "number" && (
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {entry.progress}%
-                </span>
-              )}
-              {entry.status === "error" && (
-                <button
-                  type="button"
-                  onClick={() => onRetryUpload(entry)}
-                  className="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Retry upload
-                </button>
-              )}
-
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-slate-500 hover:text-red-600 dark:text-slate-400"
                 onClick={() => onRemoveFile(index)}
-                className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-500 dark:hover:bg-red-950/20 dark:hover:text-red-400"
                 aria-label={`Remove ${entry.file.name}`}
               >
-                <X className="h-5 w-5" />
-              </button>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-          </div>
+
+            {entry.status === "error" && (
+              <div className="flex items-center justify-between gap-2 text-xs text-red-600 dark:text-red-400">
+                <p className="text-[11px] text-red-600 dark:text-red-400">
+                  {entry.error ?? "Upload failed"}
+                </p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="px-0 text-[11px] text-blue-600 hover:text-blue-500 dark:text-blue-300"
+                  onClick={() => onRetryUpload(entry)}
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+          </Card>
         ))}
       </div>
     </div>

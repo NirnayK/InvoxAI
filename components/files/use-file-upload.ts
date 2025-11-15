@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { UploadEntry } from "./file-upload-types";
 
@@ -77,7 +77,6 @@ export const useFileUpload = ({
 
       setFiles((prev) => {
         const updated = [...prev, ...newEntries];
-        onFilesChange?.(updated.map((item) => item.file));
         return updated;
       });
 
@@ -85,7 +84,7 @@ export const useFileUpload = ({
         inputRef.current.value = "";
       }
     },
-    [files.length, onFilesChange, validateFiles],
+    [files.length, validateFiles],
   );
 
   const handleRemoveFile = useCallback(
@@ -96,19 +95,17 @@ export const useFileUpload = ({
 
         const updated = prev.filter((_, i) => i !== index);
 
-        onFilesChange?.(updated.map((item) => item.file));
         setError("");
         return updated;
       });
     },
-    [onFilesChange],
+    [],
   );
 
   const handleClearFiles = useCallback(() => {
     setFiles([]);
-    onFilesChange?.([]);
     setError("");
-  }, [onFilesChange]);
+  }, []);
 
   const handleRetryUpload = useCallback(
     (entry: UploadEntry) => {
@@ -131,6 +128,10 @@ export const useFileUpload = ({
   const openFileDialog = useCallback(() => {
     inputRef.current?.click();
   }, []);
+
+  useEffect(() => {
+    onFilesChange?.(files.map((entry) => entry.file));
+  }, [files, onFilesChange]);
 
   return {
     accept,

@@ -28,7 +28,13 @@
           "identifier": "main-window",
           "description": "Provides the main window with the core APIs plus dialog, store, and SQL access used across the shell UI.",
           "windows": ["main"],
-          "permissions": ["core:default", "dialog:default", "store:default", "sql:default"]
+          "permissions": [
+            "core:default",
+            "dialog:default",
+            "store:default",
+            "sql:default",
+            "sql:allow-execute"
+          ]
         }
       ]
     }
