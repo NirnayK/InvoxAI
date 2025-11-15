@@ -19,6 +19,7 @@ import {
 import { DataTableColumnHeader } from "./data-table-column-header";
 
 export type Task = {
+  id: number;
   name: string;
   detail: string;
   files: string;
@@ -26,12 +27,43 @@ export type Task = {
   status: string;
 };
 
+export type TaskActionContextValue = {
+  isProcessing: boolean;
+  processingTaskId: number | null;
+  onProcessTask: (task: Task) => void;
+  onRetryTask: (task: Task) => void;
+  isDownloading: boolean;
+  downloadingTaskId: number | null;
+  onDownloadSheet: (task: Task) => void;
+};
+
+const TaskActionContext = React.createContext<TaskActionContextValue | null>(null);
+
+export function TaskActionProvider({
+  children,
+  value,
+}: {
+  children: React.ReactNode;
+  value: TaskActionContextValue;
+}) {
+  return <TaskActionContext.Provider value={value}>{children}</TaskActionContext.Provider>;
+}
+
+function useTaskActions() {
+  const context = React.useContext(TaskActionContext);
+  if (!context) {
+    throw new Error("Task action context is missing.");
+  }
+  return context;
+}
+
 export const STATUS_OPTIONS = [
+  { label: "Unprocessed", value: "Unprocessed" },
+  { label: "Processing", value: "Processing" },
   { label: "Completed", value: "Completed" },
   { label: "Failed", value: "Failed" },
   { label: "Cancelled", value: "Cancelled" },
   { label: "Queued", value: "Queued" },
-  { label: "Processing", value: "Processing" },
   { label: "In Progress", value: "In Progress" },
 ] as const;
 
@@ -42,6 +74,8 @@ const STATUS_VARIANT_MAP: Record<string, StatusBadgeVariant> = {
   Failed: "destructive",
   Cancelled: "destructive",
   Queued: "outline",
+  Processing: "default",
+  Unprocessed: "outline",
 };
 
 function getStatusVariant(status: string): StatusBadgeVariant {
@@ -60,6 +94,37 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function TaskRowActions({ task }: { task: Task }) {
+  const {
+    isProcessing,
+    processingTaskId,
+    onProcessTask,
+    onRetryTask,
+    isDownloading,
+    downloadingTaskId,
+    onDownloadSheet,
+  } = useTaskActions();
+  const actionLabel = task.status === "Failed" ? "Retry task" : "Process task";
+  const isTaskBusy = processingTaskId === task.id;
+  const isDownloadBusy = downloadingTaskId === task.id;
+  const disabledReason =
+    task.status === "Completed"
+      ? "This task has already been completed."
+      : isTaskBusy
+        ? "This task is already processing."
+        : isProcessing
+          ? "Finish the current task before starting another."
+          : undefined;
+  const disableAction = Boolean(disabledReason);
+  const downloadDisabled =
+    (isDownloading && !isDownloadBusy) || task.status === "Processing" || task.status === "Queued";
+  const handleAction = () => {
+    if (task.status === "Failed") {
+      onRetryTask(task);
+      return;
+    }
+    onProcessTask(task);
+  };
+
   return (
     <div className="flex justify-end">
       <DropdownMenu>
@@ -76,7 +141,20 @@ function TaskRowActions({ task }: { task: Task }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem>View details</DropdownMenuItem>
-          <DropdownMenuItem>Retry task</DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={downloadDisabled}
+            onClick={() => onDownloadSheet(task)}
+            title={
+              downloadDisabled && !isDownloadBusy
+                ? "Finish the current download before starting another."
+                : undefined
+            }
+          >
+            {isDownloadBusy ? "Downloading…" : "Download sheet"}
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={disableAction} onClick={handleAction} title={disabledReason}>
+            {isTaskBusy ? "Processing…" : actionLabel}
+          </DropdownMenuItem>
           <DropdownMenuItem className="text-destructive">Cancel task</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

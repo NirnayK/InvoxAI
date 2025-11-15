@@ -87,20 +87,17 @@ export const useFileUpload = ({
     [files.length, validateFiles],
   );
 
-  const handleRemoveFile = useCallback(
-    (index: number) => {
-      setFiles((prev) => {
-        const target = prev[index];
-        if (!target) return prev;
+  const handleRemoveFile = useCallback((index: number) => {
+    setFiles((prev) => {
+      const target = prev[index];
+      if (!target) return prev;
 
-        const updated = prev.filter((_, i) => i !== index);
+      const updated = prev.filter((_, i) => i !== index);
 
-        setError("");
-        return updated;
-      });
-    },
-    [],
-  );
+      setError("");
+      return updated;
+    });
+  }, []);
 
   const handleClearFiles = useCallback(() => {
     setFiles([]);

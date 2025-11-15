@@ -65,5 +65,43 @@ pub fn schema_migrations() -> Vec<Migration> {
             .into(),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "create sheet rows table".into(),
+            sql: r#"
+                CREATE TABLE IF NOT EXISTS sheet_rows (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sheet_id INTEGER NOT NULL,
+                    task_id INTEGER NOT NULL,
+                    file_id TEXT,
+                    file_name TEXT,
+                    seller_name TEXT,
+                    invoice_number TEXT,
+                    invoice_date TEXT,
+                    seller_address TEXT,
+                    items_json TEXT,
+                    raw_payload TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(sheet_id) REFERENCES sheets(id) ON DELETE CASCADE,
+                    FOREIGN KEY(task_id) REFERENCES task(id) ON DELETE CASCADE
+                );
+
+                CREATE INDEX IF NOT EXISTS sheet_rows_sheet_idx ON sheet_rows(sheet_id);
+                CREATE INDEX IF NOT EXISTS sheet_rows_task_idx ON sheet_rows(task_id);
+            "#
+            .into(),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 4,
+            description: "remove sheet rows table".into(),
+            sql: r#"
+                DROP INDEX IF EXISTS sheet_rows_sheet_idx;
+                DROP INDEX IF EXISTS sheet_rows_task_idx;
+                DROP TABLE IF EXISTS sheet_rows;
+            "#
+            .into(),
+            kind: MigrationKind::Up,
+        },
     ]
 }

@@ -92,6 +92,11 @@ fn init_schema(conn: &Connection) -> SqlResult<()> {
         BEGIN
           UPDATE sheets SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
         END;
+
+        DROP INDEX IF EXISTS sheet_rows_sheet_idx;
+        DROP INDEX IF EXISTS sheet_rows_task_idx;
+        DROP TABLE IF EXISTS sheet_rows;
+
         "#,
     )?;
     Ok(())

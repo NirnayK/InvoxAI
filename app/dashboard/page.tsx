@@ -86,12 +86,40 @@ const formatRelativeTimeFromTimestamp = (timestamp?: string | null) => {
   return format(Math.round(absDiff / YEAR_MS), "year");
 };
 
+const normalizeTaskStatus = (status?: string | null) => {
+  if (!status) {
+    return "Unprocessed";
+  }
+
+  const trimmed = status.trim();
+  if (!trimmed) {
+    return "Unprocessed";
+  }
+
+  const lowered = trimmed.toLowerCase();
+  if (lowered === "completed") {
+    return "Completed";
+  }
+  if (lowered === "failed") {
+    return "Failed";
+  }
+  if (lowered === "processing") {
+    return "Processing";
+  }
+  if (lowered === "cancelled") {
+    return "Cancelled";
+  }
+
+  return "Unprocessed";
+};
+
 const mapTaskRecord = (record: TaskRecord): Task => ({
+  id: record.id,
   name: record.name,
   detail: formatAttachmentDetail(record.fileCount),
   files: record.fileCount.toLocaleString(),
   lastActivity: formatRelativeTimeFromTimestamp(record.updatedAt || record.createdAt),
-  status: record.status,
+  status: normalizeTaskStatus(record.status),
 });
 
 function TaskList() {
@@ -164,7 +192,9 @@ function TaskList() {
             <Inbox className="h-6 w-6" />
           </EmptyMedia>
           <EmptyTitle>Loading tasks</EmptyTitle>
-          <EmptyDescription>Fetching the latest queue from the local SQLite store.</EmptyDescription>
+          <EmptyDescription>
+            Fetching the latest queue from the local SQLite store.
+          </EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
@@ -215,7 +245,7 @@ function TaskList() {
       </Empty>
     );
   } else if (hasTasks) {
-    content = <TaskTable tasks={tasks} />;
+    content = <TaskTable tasks={tasks} onTaskUpdated={handleRetry} />;
   } else {
     content = (
       <Empty className="mt-6">

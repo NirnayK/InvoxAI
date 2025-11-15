@@ -5,7 +5,15 @@ mod db;
 mod filesystem;
 mod sql;
 
-use commands::{clear_processed_files, get_storage_stats, import_data, import_file, list_files};
+use commands::{
+    append_sheet_rows,
+    clear_processed_files,
+    generate_sheet_xlsx,
+    get_storage_stats,
+    import_data,
+    import_file,
+    list_files,
+};
 use filesystem::{create_directory, list_directory, read_file, save_file};
 use sql::schema_migrations;
 use tauri_plugin_dialog::init as DialogPlugin;
@@ -30,7 +38,9 @@ fn main() {
             import_data,
             list_files,
             get_storage_stats,
-            clear_processed_files
+            clear_processed_files,
+            append_sheet_rows,
+            generate_sheet_xlsx
         ])
         .run(tauri::generate_context!())
         .expect("error while running Invox AI desktop shell");

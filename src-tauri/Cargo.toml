@@ -19,6 +19,8 @@ tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 uuid = { version = "1.6", features = ["v4"] }
 tauri-plugin-store = "2.4.1"
 tauri-plugin-dialog = "2.4.2"
+rust_xlsxwriter = "0.92.0"
+csv = "1"
 
 [profile.dev]
 incremental = true
