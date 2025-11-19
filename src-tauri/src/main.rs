@@ -3,14 +3,13 @@
 mod commands;
 mod db;
 mod filesystem;
-mod sql;
 
 use commands::{
     append_log_entry, append_sheet_rows, clear_processed_files, generate_sheet_xlsx,
     get_storage_stats, import_data, import_file, list_files,
 };
 use filesystem::{create_directory, list_directory, read_binary_file, read_file, save_file};
-use sql::schema_migrations;
+use db::schema_migrations;
 use tauri_plugin_dialog::init as DialogPlugin;
 use tauri_plugin_sql::Builder as SqlPluginBuilder;
 use tauri_plugin_store::Builder as StorePluginBuilder;

@@ -9,7 +9,9 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "del": "rm -rf '/Users/nak/Library/Application Support/com.invox.ai'",
+    "local": "tauri dev"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

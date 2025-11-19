@@ -89,7 +89,10 @@ export default function TaskDetailsPage() {
         setTaskDetail(result.detail);
         setTaskFiles(result.files);
       } catch (loadError) {
-        taskDetailsLogger.error("Failed to load files for task", { error: loadError, taskId });
+        taskDetailsLogger.error("Failed to load files for task", {
+          error: loadError,
+          data: { taskId },
+        });
         if (!cancelled) {
           setTaskDetail(null);
           setTaskFiles([]);
