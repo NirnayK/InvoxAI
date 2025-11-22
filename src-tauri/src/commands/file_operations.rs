@@ -4,7 +4,7 @@ use chrono::Utc;
 use rusqlite::{params, Row};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::io::{Read, Write};
+use std::io::{Read};
 use std::path::Path;
 use uuid::Uuid;
 
