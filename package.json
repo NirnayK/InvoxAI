@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build && next export",
+    "build": "next build",
     "start": "pnpm dlx serve ./out --listen 3000",
     "lint": "eslint",
     "format": "prettier --write .",

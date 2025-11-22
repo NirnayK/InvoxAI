@@ -5,9 +5,9 @@ mod db;
 mod filesystem;
 
 use commands::{
-    append_log_entry, append_sheet_rows, create_sheet_for_files, delete_files,
-    generate_sheet_xlsx, get_storage_stats, import_data, import_file, list_files,
-    list_files_paginated, update_file_status, update_files_status,
+    append_log_entry, append_xml_file, create_xml_for_files, delete_files, generate_xml_file,
+    get_storage_stats, import_data, import_file, list_files, list_files_paginated,
+    list_xml_files, update_file_parsed_details, update_file_status, update_files_status,
 };
 use filesystem::{create_directory, list_directory, read_binary_file, read_file, save_file};
 use db::schema_migrations;
@@ -36,10 +36,12 @@ fn main() {
             list_files_paginated,
             get_storage_stats,
             append_log_entry,
-            append_sheet_rows,
-            generate_sheet_xlsx,
-            create_sheet_for_files,
+            create_xml_for_files,
+            list_xml_files,
+            append_xml_file,
+            generate_xml_file,
             update_file_status,
+            update_file_parsed_details,
             update_files_status,
             delete_files
         ])

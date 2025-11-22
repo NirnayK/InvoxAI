@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 import { isTauriRuntime } from "./database";
+import { type FileStatus } from "./constants";
 
 export interface FileRecord {
   id: string;
@@ -8,7 +9,7 @@ export interface FileRecord {
   storedPath: string;
   sizeBytes: number;
   mimeType: string | null;
-  status: "Unprocessed" | "Processing" | "Processed" | "Failed";
+  status: FileStatus;
   parsedDetails: string | null;
   createdAt: string;
   processedAt: string | null;
@@ -100,6 +101,5 @@ export async function updateFileParsedDetails(
     throw new Error("File operations require the Tauri desktop runtime.");
   }
 
-  const db = await import("./database").then((mod) => mod.getDatabase());
-  await db.execute("UPDATE files SET parsed_details = ?1 WHERE id = ?2", [parsedDetails, fileId]);
+  await invoke("update_file_parsed_details", { fileId, parsedDetails });
 }

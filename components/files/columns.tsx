@@ -6,26 +6,27 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { FileRecord } from "@/lib/files";
+import { FILE_STATUS } from "@/lib/constants";
 
 import { DataTableColumnHeader } from "./data-table-column-header";
 
 export type FileModel = FileRecord;
 
 export const STATUS_OPTIONS = [
-  { label: "Unprocessed", value: "Unprocessed" },
-  { label: "Processing", value: "Processing" },
-  { label: "Processed", value: "Processed" },
-  { label: "Failed", value: "Failed" },
+  { label: "Unprocessed", value: FILE_STATUS.UNPROCESSED },
+  { label: "Processing", value: FILE_STATUS.PROCESSING },
+  { label: "Processed", value: FILE_STATUS.PROCESSED },
+  { label: "Failed", value: FILE_STATUS.FAILED },
 ] as const;
 
 type StatusBadgeVariant = NonNullable<React.ComponentProps<typeof Badge>["variant"]>;
 
 const STATUS_VARIANT_MAP: Record<string, StatusBadgeVariant> = {
-  Unprocessed: "outline",
-  Processing: "default",
-  Processed: "secondary",
+  [FILE_STATUS.UNPROCESSED]: "outline",
+  [FILE_STATUS.PROCESSING]: "default",
+  [FILE_STATUS.PROCESSED]: "secondary",
   Completed: "secondary",
-  Failed: "destructive",
+  [FILE_STATUS.FAILED]: "destructive",
   Cancelled: "destructive",
 };
 

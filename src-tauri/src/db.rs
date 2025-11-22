@@ -32,22 +32,22 @@ const CORE_SCHEMA: &str = r#"
       UPDATE files SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
     END;
 
-    CREATE TABLE IF NOT EXISTS sheets (
+    CREATE TABLE IF NOT EXISTS xml_files (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      sheet_name TEXT NOT NULL,
+      xml_name TEXT NOT NULL,
       file_ids TEXT NOT NULL DEFAULT '[]',
-      sheet_path TEXT NOT NULL,
-      sheet_file_path TEXT,
+      xml_path TEXT NOT NULL,
+      xml_file_path TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TRIGGER IF NOT EXISTS sheets_touch_updated_at
-    AFTER UPDATE ON sheets
+    CREATE TRIGGER IF NOT EXISTS xml_files_touch_updated_at
+    AFTER UPDATE ON xml_files
     FOR EACH ROW
     WHEN NEW.updated_at <= OLD.updated_at
     BEGIN
-      UPDATE sheets SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+      UPDATE xml_files SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
     END;
 "#;
 
@@ -125,14 +125,11 @@ pub fn schema_migrations() -> Vec<Migration> {
             sql: CORE_SCHEMA.into(),
             kind: MigrationKind::Up,
         },
-        // To add future migrations, append entries with incremented `version`,
-        // a short `description`, and the SQL change that updates the schema.
-        // Example:
-        // Migration {
-        //     version: 2,
-        //     description: "add processed flag",
-        //     sql: "ALTER TABLE task ADD COLUMN processed INTEGER NOT NULL DEFAULT 0;".into(),
-        //     kind: MigrationKind::Up,
-        // },
+        Migration {
+            version: 2,
+            description: "drop orphaned sheets table".into(),
+            sql: "DROP TABLE IF EXISTS sheets;".into(),
+            kind: MigrationKind::Up,
+        },
     ]
 }

@@ -50,7 +50,7 @@ import {
 import { columns as defaultColumns, STATUS_OPTIONS, type FileModel } from "./columns";
 import { DataTableViewOptions } from "./data-table-view-options";
 import { FileStatusFilter } from "./file-status-filter";
-import { FileActions } from "./file-actions";
+import { FileActionMenu } from "./actions/file-action-menu";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
 
@@ -87,13 +87,21 @@ export function DataTable({
           const selected = table.getSelectedRowModel().rows.map((row) => row.original);
           return (
             <div className="flex justify-end">
-              <FileActions selectedFiles={selected} onProcessComplete={onProcessComplete} />
+              <FileActions
+                selectedFiles={selected}
+                onProcessComplete={onProcessComplete}
+                variant="header"
+              />
             </div>
           );
         },
         cell: ({ row }) => (
           <div className="flex justify-end">
-            <FileActions selectedFiles={[row.original]} onProcessComplete={onProcessComplete} />
+            <FileActions
+              selectedFiles={[row.original]}
+              onProcessComplete={onProcessComplete}
+              variant="row"
+            />
           </div>
         ),
       },

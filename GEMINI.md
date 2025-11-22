@@ -2,7 +2,7 @@
 
 **Invox AI** is a desktop application that uses AI to automate invoice processing. Built with Next.js, Tauri, and Google's Gemini AI, it helps finance teams extract data from PDF and image invoices, validate entries, and prepare them for accounting software like Tally.
 
-The application provides a local-first experience by storing all data in a SQLite database on your machine. Users can create tasks, upload invoices, and let the AI process them in the background. Once processed, the extracted data can be reviewed and exported as a spreadsheet.
+The application provides a local-first, file-centric experience by storing all data in a SQLite database on your machine. Users can upload invoice files, process them with AI, and generate XML exports for accounting software.
 
 ## Technologies Used
 
@@ -23,18 +23,6 @@ The application uses a local SQLite database (`app.db`) stored in the system's a
 
 ## Tables
 
-### `task`
-
-Stores information about processing tasks:
-
-- `id` (INTEGER PRIMARY KEY AUTOINCREMENT)
-- `name` (TEXT NOT NULL) - Task name
-- `files_associated` (TEXT NOT NULL DEFAULT '[]') - JSON array of file IDs
-- `file_count` (INTEGER NOT NULL DEFAULT 0) - Number of associated files
-- `status` (TEXT NOT NULL DEFAULT 'Pending') - Task status (Pending, Processing, Completed, Failed, Cancelled)
-- `created_at` (TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)
-- `updated_at` (TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP) - Auto-updated via trigger
-
 ### `files`
 
 Content-addressable store for uploaded files:
@@ -45,18 +33,21 @@ Content-addressable store for uploaded files:
 - `stored_path` (TEXT NOT NULL) - Absolute path to stored file
 - `size_bytes` (INTEGER NOT NULL) - File size
 - `mime_type` (TEXT) - MIME type
-- `status` (TEXT NOT NULL DEFAULT 'Unprocessed') - Processing status
+- `status` (TEXT NOT NULL DEFAULT 'Unprocessed') - Processing status (Unprocessed, Processing, Processed, Failed)
 - `parsed_details` (TEXT) - JSON data extracted by AI
 - `created_at` (TEXT DEFAULT CURRENT_TIMESTAMP)
+- `processed_at` (TEXT) - Timestamp when file was processed
+- `updated_at` (TEXT DEFAULT CURRENT_TIMESTAMP) - Auto-updated via trigger
 
-### `sheets`
+### `xml_files`
 
-Stores information about generated spreadsheets:
+Stores information about generated XML exports:
 
 - `id` (INTEGER PRIMARY KEY AUTOINCREMENT)
-- `task_id` (INTEGER) - Foreign key to task (nullable, ON DELETE SET NULL)
-- `sheet_path` (TEXT NOT NULL) - User-facing sheet name
-- `sheet_file_path` (TEXT) - Absolute path to CSV file
+- `xml_name` (TEXT NOT NULL) - User-facing XML export name
+- `file_ids` (TEXT NOT NULL DEFAULT '[]') - JSON array of file IDs included in this export
+- `xml_path` (TEXT NOT NULL) - Sanitized filename for the export
+- `xml_file_path` (TEXT) - Absolute path to generated XML file
 - `created_at` (TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)
 - `updated_at` (TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP) - Auto-updated via trigger
 
@@ -77,16 +68,25 @@ The Tauri backend (`src-tauri/src/`) exposes the following commands to the front
 - `import_file(path: String)` - Import file from filesystem path
 - `import_data(file_name: String, bytes: Vec<u8>)` - Import file from bytes
 - `list_files()` - List recent files (limit 50)
+- `list_files_paginated(query: FileListQuery)` - List files with pagination, filtering, and sorting
+
+## File Management Commands (`commands.rs`)
+
+- `update_file_status(file_id: String, status: String)` - Update file processing status
+- `update_file_parsed_details(file_id: String, parsed_details: String)` - Update extracted data
+- `update_files_status(file_ids: Vec<String>, status: String)` - Batch update file statuses
+- `delete_files(file_ids: Vec<String>)` - Delete files from database and disk
 
 ## Storage Commands (`commands.rs`)
 
 - `get_storage_stats()` - Get storage directory stats (path, total bytes, file count)
-- `clear_processed_files()` - Delete files from completed tasks (if not used by active tasks)
 
-## Sheet Generation Commands (`commands.rs`)
+## XML Generation Commands (`commands.rs`)
 
-- `append_sheet_rows(task_id: i64, rows: Vec<SheetRowInput>)` - Append rows to task's CSV sheet
-- `generate_sheet_xlsx(task_id: i64)` - Generate XLSX file from CSV and save to Downloads
+- `create_xml_for_files(file_ids: Vec<String>, xml_name: String)` - Create XML export record
+- `list_xml_files()` - List all XML exports
+- `append_xml_file(xml_id: i64, file_ids: Vec<String>)` - Add files to existing XML export
+- `generate_xml_file(xml_id: i64)` - Generate XML content from processed files
 
 ## Logging Command (`commands.rs`)
 
@@ -98,29 +98,26 @@ The Tauri backend (`src-tauri/src/`) exposes the following commands to the front
 invox-ai/
 ├── app/                    # Next.js App Router pages
 │   ├── account/           # Account settings page
-│   ├── dashboard/         # Main dashboard
-│   ├── new-task/          # Task creation page
-│   ├── task/              # Task detail pages
+│   ├── dashboard/         # Main dashboard (file-centric)
 │   ├── layout.tsx         # Root layout
 │   └── page.tsx           # Landing page
 ├── components/            # React components
-│   ├── files/            # File management components
+│   ├── files/            # File management components (data table, upload, actions)
 │   ├── layout/           # Layout components
-│   ├── task-details/     # Task detail components
-│   ├── tasks/            # Task list components
 │   ├── theme/            # Theme provider and toggle
 │   └── ui/               # Radix UI-based components
 ├── lib/                   # Application libraries
 │   ├── invoice/          # Invoice processing logic
 │   ├── database.ts       # Database connection wrapper
 │   ├── file-import.ts    # File import utilities
+│   ├── file-processing.ts # File processing orchestration
+│   ├── files.ts          # File CRUD operations
 │   ├── filesystem.ts     # Filesystem command wrappers
 │   ├── logger.ts         # Logging utilities
 │   ├── preferences.ts    # User preferences (Gemini API key)
-│   ├── sheets.ts         # Sheet generation utilities
 │   ├── storage.ts        # Storage management
-│   ├── task-processing.ts # Task processing orchestration
-│   └── tasks.ts          # Task CRUD operations
+│   ├── xml-generator.ts  # XML generation for Tally
+│   └── xml.ts            # XML utilities
 ├── src-tauri/             # Rust backend
 │   ├── src/
 │   │   ├── commands.rs   # Tauri command implementations

@@ -124,10 +124,10 @@ export function FileUploadPanel({
   const getFileIcon = () => <FileIcon className="h-4 w-4" />;
 
   return (
-    <section className="mx-auto w-full max-w-3xl space-y-6 rounded-[32px] bg-slate-50/80 p-8 shadow-[0_25px_80px_rgba(15,23,42,0.08)]">
+    <section className="mx-auto w-full max-w-3xl space-y-6 rounded-[32px] border border-border bg-card/90 p-8 text-card-foreground shadow-[0_25px_80px_rgba(15,23,42,0.25)] dark:bg-card/70">
       <div className="space-y-1">
-        <h2 className="text-3xl font-semibold text-slate-900">File Upload</h2>
-        <p className="text-sm text-slate-500">Drag and drop your files or click to browse</p>
+        <h2 className="text-3xl font-semibold">File Upload</h2>
+        <p className="text-sm text-muted-foreground">Drag and drop your files or click to browse</p>
       </div>
 
       <div
@@ -135,7 +135,7 @@ export function FileUploadPanel({
         onDragLeave={(event) => handleDrag(event, false)}
         onDrop={handleDrop}
         className={`rounded-[28px] border-2 border-dashed p-10 text-center transition ${
-          isDragging ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"
+          isDragging ? "border-primary/60 bg-primary/10" : "border-border bg-muted/40 dark:bg-muted/10"
         }`}
       >
         <input
@@ -152,14 +152,14 @@ export function FileUploadPanel({
           onClick={() => inputRef.current?.click()}
           className="flex w-full flex-col items-center gap-3 text-center"
         >
-          <span className="rounded-full bg-blue-100 p-4">
-            <Upload className="h-7 w-7 text-blue-600" />
+          <span className="rounded-full bg-primary/10 p-4 text-primary">
+            <Upload className="h-7 w-7" />
           </span>
-          <p className="text-base font-semibold text-slate-900">
+          <p className="text-base font-semibold">
             {isDragging ? "Drop your files here" : "Drag and drop your files here"}
           </p>
-          <p className="text-sm text-slate-500">or click to browse from your computer</p>
-          <p className="text-xs text-slate-400">
+          <p className="text-sm text-muted-foreground">or click to browse from your computer</p>
+          <p className="text-xs text-muted-foreground">
             Max {maxFiles} files • Max {(maxFileSize / 1024 / 1024).toFixed(0)}MB per file
           </p>
         </button>
@@ -173,7 +173,7 @@ export function FileUploadPanel({
       )}
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm font-semibold text-slate-600">
+        <div className="flex items-center justify-between text-sm font-semibold text-muted-foreground">
           <span>Selected Files ({files.length})</span>
           {files.length > 0 ? (
             <button
@@ -184,12 +184,12 @@ export function FileUploadPanel({
                 setError("");
                 setUploadError(null);
               }}
-              className="text-blue-500 hover:underline"
+              className="text-primary hover:underline"
             >
               Clear all
             </button>
           ) : (
-            <span className="text-slate-400">Clear all</span>
+            <span className="text-muted-foreground/70">Clear all</span>
           )}
         </div>
 
@@ -199,19 +199,19 @@ export function FileUploadPanel({
               {files.map((file, index) => (
                 <div
                   key={`${file.name}-${index}`}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                  className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 shadow-sm"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span className="text-blue-500">{getFileIcon()}</span>
+                    <span className="text-primary">{getFileIcon()}</span>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                      <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+                      <p className="truncate text-sm font-semibold">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleRemove(index)}
-                    className="rounded-full p-2 text-slate-400 hover:text-red-500"
+                    className="rounded-full p-2 text-muted-foreground hover:text-destructive"
                     aria-label={`Remove ${file.name}`}
                   >
                     <X className="h-4 w-4" />
@@ -220,14 +220,14 @@ export function FileUploadPanel({
               ))}
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <div className="text-sm text-slate-600">
+            <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+              <div className="text-sm text-muted-foreground">
                 {isUploading
                   ? "Uploading files to your workspace..."
                   : "Ready to add these files to your workspace."}
               </div>
               {uploadError && (
-                <p className="mt-2 text-sm text-red-600" role="alert">
+                <p className="mt-2 text-sm text-destructive" role="alert">
                   {uploadError}
                 </p>
               )}
@@ -244,7 +244,7 @@ export function FileUploadPanel({
             </div>
           </div>
         ) : (
-          <p className="rounded-2xl border border-dashed border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-400">
+          <p className="rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
             Your files will appear here once selected.
           </p>
         )}

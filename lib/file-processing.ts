@@ -1,17 +1,13 @@
 import { readFileBinary } from "./filesystem";
 
 import { MIME_BY_EXTENSION } from "@/lib/invoice/constants";
-import type {
-  ExtractionPayload,
-  InvoiceExtractionResult,
-  InvoiceFileInput,
-} from "@/lib/invoice/helpers";
+import type { InvoiceFileInput } from "@/lib/invoice/helpers";
 
 import { isTauriRuntime } from "./database";
 import { getGeminiApiKey } from "./preferences";
-import { appendSheetRows, createSheetForFiles, type SheetRowPayload } from "./sheets";
 import { updateFileStatus, updateFileParsedDetails, type FileRecord } from "./files";
 import { createLogger } from "./logger";
+import { FILE_STATUS } from "./constants";
 
 const FALLBACK_MIME = "application/octet-stream";
 
@@ -38,7 +34,6 @@ const createFileLabel = (fileName: string, id: string) => {
 export interface FileProcessingResult {
   processedFiles: number;
   failedFiles: number;
-  sheetId: number;
 }
 
 export interface FileProcessingOptions {
@@ -53,7 +48,6 @@ const fileProcessingLogger = createLogger("FileProcessing");
  */
 export async function processFiles(
   files: FileRecord[],
-  sheetName: string,
   options?: FileProcessingOptions,
 ): Promise<FileProcessingResult> {
   if (!isTauriRuntime()) {
@@ -62,7 +56,7 @@ export async function processFiles(
 
   const emit = options?.onStatusUpdate;
   fileProcessingLogger.debug("Starting file processing", {
-    data: { fileCount: files.length, sheetName },
+    data: { fileCount: files.length },
   });
 
   if (!files.length) {
@@ -75,17 +69,10 @@ export async function processFiles(
     throw new Error("Set your Gemini API key in Account preferences before processing files.");
   }
 
-  emit?.("Creating sheet...");
-  const sheetId = await createSheetForFiles(
-    files.map((f) => f.id),
-    sheetName,
-  );
-  fileProcessingLogger.debug("Created sheet", { data: { sheetId, sheetName } });
-
   emit?.("Reading files from disk...");
 
   // Update all files to "Processing" status
-  await Promise.all(files.map((file) => updateFileStatus(file.id, "Processing")));
+  await Promise.all(files.map((file) => updateFileStatus(file.id, FILE_STATUS.PROCESSING)));
 
   try {
     const labelToFile = new Map<string, FileRecord>();
@@ -133,7 +120,6 @@ export async function processFiles(
 
     fileProcessingLogger.debug("Batch processing completed", {
       data: {
-        sheetId,
         successCount: results.length,
         errorCount: errors.length,
       },
@@ -141,43 +127,18 @@ export async function processFiles(
 
     // Update database for successful files
     emit?.("Saving extracted data...");
-    const rows: SheetRowPayload[] = [];
 
     for (const result of results) {
       const payload = result.result;
 
       // Update file status and parsed details in database
-      await updateFileStatus(result.fileId, "Processed");
+      await updateFileStatus(result.fileId, FILE_STATUS.PROCESSED);
       await updateFileParsedDetails(result.fileId, JSON.stringify(payload));
-
-      if (isStructuredPayload(payload)) {
-        rows.push({
-          fileId: result.fileId,
-          fileName: result.fileName,
-          sellerName: payload["seller name"] ?? null,
-          invoiceNumber: payload["invoce number"] ?? null,
-          invoiceDate: payload.date ?? null,
-          sellerAddress: payload["seller address"] ?? null,
-          itemsJson: serializeItems(payload),
-          rawPayload: JSON.stringify(payload),
-        });
-      } else {
-        rows.push({
-          fileId: result.fileId,
-          fileName: result.fileName,
-          sellerName: null,
-          invoiceNumber: null,
-          invoiceDate: null,
-          sellerAddress: null,
-          itemsJson: null,
-          rawPayload: JSON.stringify(payload),
-        });
-      }
     }
 
     // Update database for failed files
     for (const error of errors) {
-      await updateFileStatus(error.fileId, "Failed");
+      await updateFileStatus(error.fileId, FILE_STATUS.FAILED);
       await updateFileParsedDetails(
         error.fileId,
         JSON.stringify({ error: error.error, statusCode: error.statusCode }),
@@ -185,15 +146,12 @@ export async function processFiles(
 
       fileProcessingLogger.warn("File processing failed", {
         data: {
-          sheetId,
           fileId: error.fileId,
           fileName: error.fileName,
           error: error.error,
         },
       });
     }
-
-    await appendSheetRows(sheetId, rows);
 
     // Provide feedback based on results
     if (errors.length === 0) {
@@ -207,37 +165,13 @@ export async function processFiles(
     return {
       processedFiles: results.length,
       failedFiles: errors.length,
-      sheetId,
     };
   } catch (error) {
     // Mark all files as failed if processing crashes
-    await Promise.all(files.map((file) => updateFileStatus(file.id, "Failed")));
+    await Promise.all(files.map((file) => updateFileStatus(file.id, FILE_STATUS.FAILED)));
     fileProcessingLogger.error("File processing failed", {
-      data: { sheetId },
       error,
     });
     throw error;
   }
 }
-
-const isStructuredPayload = (payload: ExtractionPayload): payload is InvoiceExtractionResult => {
-  return (
-    payload != null &&
-    typeof payload === "object" &&
-    ("seller name" in payload ||
-      "invoce number" in payload ||
-      "seller address" in payload ||
-      "date" in payload)
-  );
-};
-
-const serializeItems = (payload: InvoiceExtractionResult) => {
-  if (!Array.isArray(payload.items)) {
-    return "[]";
-  }
-  try {
-    return JSON.stringify(payload.items);
-  } catch {
-    return "[]";
-  }
-};

@@ -12,8 +12,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { DataTable } from "@/components/tasks/data-table";
-import { FileUploadModal } from "@/components/tasks/upload/file-upload-modal";
+import { DataTable } from "@/components/files/data-table";
+import { FileUploadModal } from "@/components/files/upload/file-upload-modal";
 import { isTauriRuntime } from "@/lib/database";
 import { listFilesPaginated, type FileRecord } from "@/lib/files";
 import { createLogger } from "@/lib/logger";
@@ -53,7 +53,7 @@ function FileList() {
 
       try {
         const result = await listFilesPaginated({
-          limit: 50,
+          limit: 25,
           offset: 0,
           sortBy: "created_at",
           sortOrder: "DESC",
