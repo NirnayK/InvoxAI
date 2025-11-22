@@ -14,14 +14,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import type { Task } from "./columns";
+import type { FileModel } from "./columns";
 
-interface TaskStatusFilterProps {
-  column: Column<Task, unknown> | undefined;
+interface FileStatusFilterProps {
+  column: Column<FileModel, unknown> | undefined;
   options: readonly { label: string; value: string }[];
 }
 
-export function TaskStatusFilter({ column, options }: TaskStatusFilterProps) {
+export function FileStatusFilter({ column, options }: FileStatusFilterProps) {
   if (!column) {
     return null;
   }

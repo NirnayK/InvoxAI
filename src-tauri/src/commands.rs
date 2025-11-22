@@ -108,9 +108,7 @@ impl SheetCsvRow {
 struct SheetMeta {
     id: i64,
     sheet_name: String,
-    sheet_path: String,
     sheet_file_path: Option<String>,
-    file_ids: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -185,18 +183,14 @@ fn ensure_sheet_data_dir() -> Result<PathBuf, String> {
 
 fn load_sheet_metadata(conn: &Connection, sheet_id: i64) -> Result<SheetMeta, String> {
     let mut stmt = conn
-        .prepare("SELECT id, sheet_name, sheet_path, sheet_file_path, file_ids FROM sheets WHERE id = ?1 LIMIT 1")
+        .prepare("SELECT id, sheet_name, sheet_file_path FROM sheets WHERE id = ?1 LIMIT 1")
         .map_err(|error| error.to_string())?;
     let sheet = stmt
         .query_row(params![sheet_id], |row| {
-            let file_ids_json: String = row.get(4)?;
-            let file_ids: Vec<String> = serde_json::from_str(&file_ids_json).unwrap_or_default();
             Ok(SheetMeta {
                 id: row.get(0)?,
                 sheet_name: row.get(1)?,
-                sheet_path: row.get(2)?,
-                sheet_file_path: row.get(3)?,
-                file_ids,
+                sheet_file_path: row.get(2)?,
             })
         })
         .optional()

@@ -4,13 +4,16 @@ import { AlertCircle, File as FileIcon, Upload, X } from "lucide-react";
 import type { ChangeEvent, DragEvent } from "react";
 import { useRef, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { ALLOWED_EXTENSIONS } from "@/lib/invoice/constants";
+import { importFiles } from "@/lib/file-import";
 
 interface FileUploadPanelProps {
   maxFiles?: number;
   maxFileSize?: number; // bytes
   onFilesChange?: (files: File[]) => void;
   accept?: string;
+  onComplete?: () => void;
 }
 
 const DEFAULT_MAX_FILES = 10;
@@ -21,10 +24,13 @@ export function FileUploadPanel({
   maxFileSize = DEFAULT_MAX_FILE_SIZE,
   onFilesChange,
   accept = ALLOWED_EXTENSIONS.join(","),
+  onComplete,
 }: FileUploadPanelProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const formatFileSize = (bytes: number) => {
@@ -39,6 +45,7 @@ export function FileUploadPanel({
   const handleFiles = (incomingFiles: FileList | null) => {
     if (!incomingFiles) return;
     setError("");
+    setUploadError(null);
 
     const newFiles = Array.from(incomingFiles);
     const validFiles: File[] = [];
@@ -73,6 +80,7 @@ export function FileUploadPanel({
     setFiles(updated);
     onFilesChange?.(updated);
     setError("");
+    setUploadError(null);
   };
 
   const handleDrag = (event: DragEvent<HTMLDivElement>, dragging: boolean) => {
@@ -86,6 +94,31 @@ export function FileUploadPanel({
     event.stopPropagation();
     setIsDragging(false);
     handleFiles(event.dataTransfer.files);
+  };
+
+  const handleUpload = async () => {
+    if (!files.length || isUploading) {
+      return;
+    }
+
+    setUploadError(null);
+    setIsUploading(true);
+
+    try {
+      await importFiles(files);
+      setFiles([]);
+      onFilesChange?.([]);
+      setError("");
+      onComplete?.();
+    } catch (uploadErr) {
+      setUploadError(
+        uploadErr instanceof Error
+          ? uploadErr.message
+          : "Failed to upload files. Please try again.",
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const getFileIcon = () => <FileIcon className="h-4 w-4" />;
@@ -149,6 +182,7 @@ export function FileUploadPanel({
                 setFiles([]);
                 onFilesChange?.([]);
                 setError("");
+                setUploadError(null);
               }}
               className="text-blue-500 hover:underline"
             >
@@ -160,29 +194,54 @@ export function FileUploadPanel({
         </div>
 
         {files.length > 0 ? (
-          <div className="space-y-2">
-            {files.map((file, index) => (
-              <div
-                key={`${file.name}-${index}`}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <span className="text-blue-500">{getFileIcon()}</span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
-                    <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemove(index)}
-                  className="rounded-full p-2 text-slate-400 hover:text-red-500"
-                  aria-label={`Remove ${file.name}`}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {files.map((file, index) => (
+                <div
+                  key={`${file.name}-${index}`}
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
                 >
-                  <X className="h-4 w-4" />
-                </button>
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="text-blue-500">{getFileIcon()}</span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900">{file.name}</p>
+                      <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(index)}
+                    className="rounded-full p-2 text-slate-400 hover:text-red-500"
+                    aria-label={`Remove ${file.name}`}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <div className="text-sm text-slate-600">
+                {isUploading
+                  ? "Uploading files to your workspace..."
+                  : "Ready to add these files to your workspace."}
               </div>
-            ))}
+              {uploadError && (
+                <p className="mt-2 text-sm text-red-600" role="alert">
+                  {uploadError}
+                </p>
+              )}
+              <div className="mt-3 flex justify-end">
+                <Button
+                  type="button"
+                  onClick={handleUpload}
+                  disabled={isUploading}
+                  className="gap-2 rounded-2xl px-5 py-2 text-sm font-semibold"
+                >
+                  {`Upload ${files.length} file${files.length === 1 ? "" : "s"}`}
+                </Button>
+              </div>
+            </div>
           </div>
         ) : (
           <p className="rounded-2xl border border-dashed border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-400">

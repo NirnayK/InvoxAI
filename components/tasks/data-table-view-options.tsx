@@ -13,9 +13,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import type { Task } from "./columns";
+import type { FileModel } from "./columns";
 
-export function DataTableViewOptions({ table }: { table: TanstackTable<Task> }) {
+export function DataTableViewOptions({ table }: { table: TanstackTable<FileModel> }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

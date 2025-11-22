@@ -47,18 +47,26 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { columns as defaultColumns, STATUS_OPTIONS, type Task } from "./columns";
+import { columns as defaultColumns, STATUS_OPTIONS, type FileModel } from "./columns";
 import { DataTableViewOptions } from "./data-table-view-options";
-import { TaskStatusFilter } from "./task-status-filter";
+import { FileStatusFilter } from "./file-status-filter";
+import { FileActions } from "./file-actions";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 25, 50];
 
 interface DataTableProps {
-  columns?: ColumnDef<Task, unknown>[];
-  data: Task[];
+  columns?: ColumnDef<FileModel, unknown>[];
+  data: FileModel[];
+  onSelectionChange?: (selected: FileModel[]) => void;
+  onProcessComplete?: () => void;
 }
 
-export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
+export function DataTable({
+  columns = defaultColumns,
+  data,
+  onSelectionChange,
+  onProcessComplete,
+}: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -68,10 +76,35 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
     pageSize: PAGE_SIZE_OPTIONS[0],
   });
 
+  const tableColumns = React.useMemo<ColumnDef<FileModel, unknown>[]>(
+    () => [
+      ...columns,
+      {
+        id: "__actions",
+        enableSorting: false,
+        enableHiding: false,
+        header: ({ table }) => {
+          const selected = table.getSelectedRowModel().rows.map((row) => row.original);
+          return (
+            <div className="flex justify-end">
+              <FileActions selectedFiles={selected} onProcessComplete={onProcessComplete} />
+            </div>
+          );
+        },
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            <FileActions selectedFiles={[row.original]} onProcessComplete={onProcessComplete} />
+          </div>
+        ),
+      },
+    ],
+    [columns, onProcessComplete],
+  );
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     state: {
       sorting,
       columnFilters,
@@ -90,6 +123,17 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
     onPaginationChange: setPagination,
   });
 
+  React.useEffect(() => {
+    if (!onSelectionChange) {
+      return;
+    }
+    onSelectionChange(table.getSelectedRowModel().rows.map((row) => row.original));
+  }, [onSelectionChange, rowSelection, table]);
+
+  React.useEffect(() => {
+    setRowSelection({});
+  }, [data]);
+
   const isFiltered = table.getState().columnFilters.length > 0;
   const paginationState = table.getState().pagination;
   const pageSize = paginationState.pageSize;
@@ -104,12 +148,12 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
       <CardContent className="space-y-4 pt-6">
         <div className="flex flex-wrap items-center gap-2">
           <Input
-            placeholder="Search task..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
+            placeholder="Search files..."
+            value={(table.getColumn("fileName")?.getFilterValue() as string) ?? ""}
+            onChange={(event) => table.getColumn("fileName")?.setFilterValue(event.target.value)}
             className="h-9 w-full max-w-sm"
           />
-          <TaskStatusFilter column={table.getColumn("status")} options={STATUS_OPTIONS} />
+          <FileStatusFilter column={table.getColumn("status")} options={STATUS_OPTIONS} />
           {isFiltered && (
             <Button variant="ghost" className="h-9 px-2" onClick={() => table.resetColumnFilters()}>
               Reset
@@ -149,7 +193,7 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <TableCell colSpan={tableColumns.length} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>
@@ -175,7 +219,7 @@ export function DataTable({ columns = defaultColumns, data }: DataTableProps) {
   );
 }
 
-function DataTablePagination({ table }: { table: TanstackTable<Task> }) {
+function DataTablePagination({ table }: { table: TanstackTable<FileModel> }) {
   const pagination = table.getState().pagination;
   const pageSize = pagination.pageSize;
   const pageIndex = pagination.pageIndex;

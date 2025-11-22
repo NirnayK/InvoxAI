@@ -12,26 +12,21 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { FileTable } from "@/components/files/file-table";
-import { FileUploadModal } from "@/components/files/file-upload-modal";
-import { FileActions } from "@/components/files/file-actions";
+import { DataTable } from "@/components/tasks/data-table";
+import { FileUploadModal } from "@/components/tasks/upload/file-upload-modal";
 import { isTauriRuntime } from "@/lib/database";
 import { listFilesPaginated, type FileRecord } from "@/lib/files";
 import { createLogger } from "@/lib/logger";
 
 const dashboardLogger = createLogger("DashboardPage");
 
-type StatusFilter = "All" | "Unprocessed" | "Processed" | "Failed";
-
 function FileList() {
   const [files, setFiles] = useState<FileRecord[]>([]);
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [runtimeChecked, setRuntimeChecked] = useState(false);
   const [tauriAvailable, setTauriAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshIndex, setRefreshIndex] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   useEffect(() => {
@@ -58,7 +53,6 @@ function FileList() {
 
       try {
         const result = await listFilesPaginated({
-          statusFilter: statusFilter === "All" ? undefined : statusFilter,
           limit: 50,
           offset: 0,
           sortBy: "created_at",
@@ -86,11 +80,10 @@ function FileList() {
     return () => {
       cancelled = true;
     };
-  }, [refreshIndex, statusFilter]);
+  }, [refreshIndex]);
 
   const handleRefresh = () => {
     setRefreshIndex((value) => value + 1);
-    setSelectedFiles(new Set());
   };
 
   const handleUploadComplete = () => {
@@ -100,8 +93,6 @@ function FileList() {
   const handleProcessComplete = () => {
     handleRefresh();
   };
-
-  const selectedFileRecords = files.filter((f) => selectedFiles.has(f.id));
 
   const hasFiles = files.length > 0;
   const shouldShowLoadingState = (!runtimeChecked && !hasFiles) || (isLoading && !hasFiles);
@@ -169,14 +160,7 @@ function FileList() {
     );
   } else if (hasFiles) {
     content = (
-      <div className="space-y-4">
-        <FileTable
-          files={files}
-          selectedFiles={selectedFiles}
-          onSelectionChange={setSelectedFiles}
-          onRefresh={handleRefresh}
-        />
-      </div>
+      <DataTable data={files} onProcessComplete={handleProcessComplete} />
     );
   } else {
     content = (
@@ -218,31 +202,6 @@ function FileList() {
             Upload Files
           </Button>
         </div>
-
-        {hasFiles && (
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex gap-2">
-              {(["All", "Unprocessed", "Processed", "Failed"] as StatusFilter[]).map((status) => (
-                <Button
-                  key={status}
-                  variant={statusFilter === status ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter(status)}
-                  className="text-xs"
-                >
-                  {status}
-                </Button>
-              ))}
-            </div>
-
-            {selectedFiles.size > 0 && (
-              <FileActions
-                selectedFiles={selectedFileRecords}
-                onProcessComplete={handleProcessComplete}
-              />
-            )}
-          </div>
-        )}
 
         {content}
       </section>
