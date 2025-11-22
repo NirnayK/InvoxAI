@@ -7,24 +7,6 @@ const APP_DIR_NAME: &str = "com.invox.ai";
 const DB_FILE_NAME: &str = "app.db";
 
 const CORE_SCHEMA: &str = r#"
-    CREATE TABLE IF NOT EXISTS task (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      files_associated TEXT NOT NULL DEFAULT '[]',
-      file_count INTEGER NOT NULL DEFAULT 0,
-      status TEXT NOT NULL DEFAULT 'Pending',
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TRIGGER IF NOT EXISTS task_touch_updated_at
-    AFTER UPDATE ON task
-    FOR EACH ROW
-    WHEN NEW.updated_at <= OLD.updated_at
-    BEGIN
-      UPDATE task SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
-    END;
-
     CREATE TABLE IF NOT EXISTS files (
       id TEXT PRIMARY KEY,
       hash_sha256 TEXT NOT NULL UNIQUE,
@@ -34,19 +16,30 @@ const CORE_SCHEMA: &str = r#"
       mime_type TEXT,
       status TEXT NOT NULL DEFAULT 'Unprocessed',
       parsed_details TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      processed_at TEXT,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE INDEX IF NOT EXISTS files_hash_idx ON files(hash_sha256);
+    CREATE INDEX IF NOT EXISTS files_status_idx ON files(status);
+
+    CREATE TRIGGER IF NOT EXISTS files_touch_updated_at
+    AFTER UPDATE ON files
+    FOR EACH ROW
+    WHEN NEW.updated_at <= OLD.updated_at
+    BEGIN
+      UPDATE files SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+    END;
 
     CREATE TABLE IF NOT EXISTS sheets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      task_id INTEGER,
+      sheet_name TEXT NOT NULL,
+      file_ids TEXT NOT NULL DEFAULT '[]',
       sheet_path TEXT NOT NULL,
       sheet_file_path TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY(task_id) REFERENCES task(id) ON DELETE SET NULL
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TRIGGER IF NOT EXISTS sheets_touch_updated_at
@@ -100,6 +93,27 @@ pub fn get_connection() -> SqlResult<Connection> {
 
 fn init_schema(conn: &Connection) -> SqlResult<()> {
     conn.execute_batch(CORE_SCHEMA)?;
+    ensure_processed_at_column(conn)?;
+    Ok(())
+}
+
+fn ensure_processed_at_column(conn: &Connection) -> SqlResult<()> {
+    let mut stmt = conn.prepare("PRAGMA table_info(files)")?;
+    let mut has_column = false;
+
+    let mut rows = stmt.query([])?;
+    while let Some(row) = rows.next()? {
+        let name: String = row.get(1)?;
+        if name == "processed_at" {
+            has_column = true;
+            break;
+        }
+    }
+
+    if !has_column {
+        conn.execute("ALTER TABLE files ADD COLUMN processed_at TEXT", [])?;
+    }
+
     Ok(())
 }
 

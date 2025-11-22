@@ -17,7 +17,12 @@ import {
 } from "@/components/ui/empty";
 import { Badge } from "@/components/ui/badge";
 import { TaskFilesTable } from "@/components/task-details/task-files-table";
-import { TaskFileDetail, type TaskDetail, getTaskWithFiles, normalizeTaskStatus } from "@/lib/tasks";
+import {
+  TaskFileDetail,
+  type TaskDetail,
+  getTaskWithFiles,
+  normalizeTaskStatus,
+} from "@/lib/tasks";
 import { isTauriRuntime } from "@/lib/database";
 import { createLogger } from "@/lib/logger";
 
@@ -140,7 +145,9 @@ export default function TaskDetailsPage() {
               <Inbox className="h-6 w-6" />
             </EmptyMedia>
             <EmptyTitle>Desktop runtime required</EmptyTitle>
-            <EmptyDescription>Launch the Invox shell (pnpm tauri:dev) to continue.</EmptyDescription>
+            <EmptyDescription>
+              Launch the Invox shell (pnpm tauri:dev) to continue.
+            </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <Button

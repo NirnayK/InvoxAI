@@ -76,7 +76,10 @@ export function TaskFilesTable({ files }: TaskFilesTableProps) {
     if (!hasFiles) {
       return (
         <TableRow>
-          <TableCell colSpan={COLUMN_COUNT} className="h-24 text-center text-sm text-muted-foreground">
+          <TableCell
+            colSpan={COLUMN_COUNT}
+            className="h-24 text-center text-sm text-muted-foreground"
+          >
             No files attached to this task yet.
           </TableCell>
         </TableRow>
@@ -93,9 +96,7 @@ export function TaskFilesTable({ files }: TaskFilesTableProps) {
           <TableRow className="data-[state=expanded]:bg-muted">
             <TableCell className="space-y-1">
               <p className="text-sm font-semibold text-foreground">{file.fileName}</p>
-              <p className="text-xs text-muted-foreground">
-                {file.mimeType ?? "Unknown format"}
-              </p>
+              <p className="text-xs text-muted-foreground">{file.mimeType ?? "Unknown format"}</p>
             </TableCell>
             <TableCell>
               <span className="text-sm text-muted-foreground">{formattedDate}</span>
@@ -123,7 +124,8 @@ export function TaskFilesTable({ files }: TaskFilesTableProps) {
                     <span className="font-medium text-foreground">File ID:</span> {file.id}
                   </p>
                   <p>
-                    <span className="font-medium text-foreground">Size:</span> {formatFileSize(file.sizeBytes)}
+                    <span className="font-medium text-foreground">Size:</span>{" "}
+                    {formatFileSize(file.sizeBytes)}
                   </p>
                   <p>
                     <span className="font-medium text-foreground">Stored path:</span>{" "}

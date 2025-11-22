@@ -108,7 +108,7 @@ export default function NewTaskPage() {
         setSheets(existing);
       })
       .catch((error) => {
-      newTaskLogger.error("Failed to load sheets", { error });
+        newTaskLogger.error("Failed to load sheets", { error });
         if (!cancelled) {
           setStatus({ variant: "error", message: "Unable to load existing sheets." });
         }

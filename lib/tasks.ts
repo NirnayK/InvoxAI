@@ -261,3 +261,33 @@ export async function updateTaskStatus(taskId: number, status: string) {
   const db = await getDatabase();
   await db.execute("UPDATE task SET status = ?1 WHERE id = ?2", [status, taskId]);
 }
+
+export async function updateFileStatus(fileId: string, status: string) {
+  const db = await getDatabase();
+  await db.execute("UPDATE files SET status = ?1 WHERE id = ?2", [status, fileId]);
+}
+
+export async function updateFileParsedDetails(fileId: string, parsedDetails: string) {
+  const db = await getDatabase();
+  await db.execute("UPDATE files SET parsed_details = ?1 WHERE id = ?2", [parsedDetails, fileId]);
+}
+
+export async function getFileById(fileId: string): Promise<StoredTaskFile | null> {
+  const db = await getDatabase();
+  const rows = await db.select<FileRow[]>(
+    "SELECT id, file_name, stored_path, mime_type, size_bytes, created_at FROM files WHERE id = ?1 LIMIT 1",
+    [fileId],
+  );
+  if (!rows.length) {
+    return null;
+  }
+  const row = rows[0];
+  return {
+    id: row.id,
+    fileName: row.file_name,
+    path: row.stored_path,
+    mimeType: row.mime_type,
+    sizeBytes: row.size_bytes,
+    createdAt: row.created_at,
+  };
+}

@@ -18,7 +18,21 @@ export interface SheetDownloadResult {
   rows: number;
 }
 
-export async function appendSheetRows(taskId: number, rows: SheetRowPayload[]) {
+/**
+ * Create a new sheet for a selection of files
+ */
+export async function createSheetForFiles(fileIds: string[], sheetName: string): Promise<number> {
+  if (!isTauriRuntime()) {
+    throw new Error("Sheet creation is only available inside the desktop shell.");
+  }
+
+  return invoke<number>("create_sheet_for_files", { fileIds, sheetName });
+}
+
+/**
+ * Append rows to a sheet
+ */
+export async function appendSheetRows(sheetId: number, rows: SheetRowPayload[]) {
   if (!rows.length) {
     return;
   }
@@ -27,14 +41,17 @@ export async function appendSheetRows(taskId: number, rows: SheetRowPayload[]) {
   }
 
   await invoke("append_sheet_rows", {
-    taskId,
+    sheetId,
     rows,
   });
 }
 
-export async function downloadSheetForTask(taskId: number): Promise<SheetDownloadResult> {
+/**
+ * Download a sheet as XLSX file
+ */
+export async function downloadSheet(sheetId: number): Promise<SheetDownloadResult> {
   if (!isTauriRuntime()) {
     throw new Error("Downloading sheets is only available inside the desktop shell.");
   }
-  return invoke<SheetDownloadResult>("generate_sheet_xlsx", { task_id: taskId });
+  return invoke<SheetDownloadResult>("generate_sheet_xlsx", { sheetId });
 }

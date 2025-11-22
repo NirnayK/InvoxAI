@@ -17,6 +17,8 @@ export type {
   InvoiceFileInput,
   NormalizedFile,
   UploadedFileRef,
+  BatchExtractionResult,
+  ProcessingError,
 } from "./types";
 
 const MIME_BY_EXTENSION: Record<string, string> = {

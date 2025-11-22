@@ -17,6 +17,20 @@ export type InvoiceExtractionResult = {
 
 export type ExtractionPayload = InvoiceExtractionResult | { _raw: string };
 
+export interface BatchExtractionResult {
+  fileId: string;
+  fileName: string;
+  result: ExtractionPayload;
+  error?: string;
+}
+
+export interface ProcessingError {
+  fileId: string;
+  fileName: string;
+  error: string;
+  statusCode?: number;
+}
+
 export interface InvoiceFileInput {
   file: string | Blob;
   mimeType?: string;

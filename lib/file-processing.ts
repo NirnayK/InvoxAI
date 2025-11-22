@@ -9,14 +9,8 @@ import type {
 
 import { isTauriRuntime } from "./database";
 import { getGeminiApiKey } from "./preferences";
-import { appendSheetRows, type SheetRowPayload } from "./sheets";
-import {
-  getSheetByTaskId,
-  getStoredFilesByIds,
-  getTaskDetail,
-  type StoredTaskFile,
-  updateTaskStatus,
-} from "./tasks";
+import { appendSheetRows, createSheetForFiles, type SheetRowPayload } from "./sheets";
+import { updateFileStatus, updateFileParsedDetails, type FileRecord } from "./files";
 import { createLogger } from "./logger";
 
 const FALLBACK_MIME = "application/octet-stream";
@@ -41,98 +35,65 @@ const createFileLabel = (fileName: string, id: string) => {
   return `${fileName} (#${shortId})`;
 };
 
-export interface TaskProcessingResult {
+export interface FileProcessingResult {
   processedFiles: number;
+  failedFiles: number;
+  sheetId: number;
 }
 
-export interface TaskProcessingOptions {
+export interface FileProcessingOptions {
   onStatusUpdate?: (message: string) => void;
+  onProgress?: (processed: number, total: number) => void;
 }
 
-const taskProcessingLogger = createLogger("TaskProcessing");
+const fileProcessingLogger = createLogger("FileProcessing");
 
-export async function processTaskById(
-  taskId: number,
-  options?: TaskProcessingOptions,
-): Promise<TaskProcessingResult> {
+/**
+ * Process a selection of files and create a sheet with the results
+ */
+export async function processFiles(
+  files: FileRecord[],
+  sheetName: string,
+  options?: FileProcessingOptions,
+): Promise<FileProcessingResult> {
   if (!isTauriRuntime()) {
-    throw new Error("Processing tasks requires the Invox desktop runtime.");
+    throw new Error("Processing files requires the Invox desktop runtime.");
   }
 
   const emit = options?.onStatusUpdate;
-  taskProcessingLogger.debug("Starting task processing", {
-    data: { taskId },
+  fileProcessingLogger.debug("Starting file processing", {
+    data: { fileCount: files.length, sheetName },
   });
-  emit?.("Loading task details...");
 
-  const task = await getTaskDetail(taskId);
-  if (!task) {
-    taskProcessingLogger.error("Task missing in local database", { data: { taskId } });
-    throw new Error("Task not found in the local database.");
-  }
-  taskProcessingLogger.debug("Loaded task details", {
-    data: {
-      taskId: task.id,
-      name: task.name,
-      fileIds: task.fileIds,
-    },
-  });
-  if (!task.fileIds.length) {
-    taskProcessingLogger.warn("Task has no attached files", { data: { taskId: task.id } });
-    throw new Error("This task has no files to process. Attach files before running it.");
-  }
-
-  const storedFiles = await getStoredFilesByIds(task.fileIds);
-  taskProcessingLogger.debug("Queried stored files", {
-    data: {
-      requestedFileIds: task.fileIds,
-      retrievedCount: storedFiles.length,
-    },
-  });
-  if (!storedFiles.length) {
-    taskProcessingLogger.error("No stored files found for task", {
-      data: { taskId: task.id, fileIds: task.fileIds },
-    });
-    throw new Error("Unable to locate the files associated with this task.");
-  }
-  const storedMap = new Map(storedFiles.map((file) => [file.id, file] as const));
-  const orderedFiles = task.fileIds
-    .map((id) => storedMap.get(id))
-    .filter((value): value is StoredTaskFile => Boolean(value));
-
-  if (orderedFiles.length !== task.fileIds.length) {
-    taskProcessingLogger.error("Some files referenced by task are missing", {
-      data: {
-        taskId: task.id,
-        requested: task.fileIds,
-        retrieved: orderedFiles.map((file) => file?.id ?? "unknown"),
-      },
-    });
-    throw new Error("Some files referenced by this task are missing from local storage.");
-  }
-
-  const sheetExists = await getSheetByTaskId(taskId);
-  if (!sheetExists) {
-    taskProcessingLogger.error("No sheet linked to task", { data: { taskId: task.id } });
-    throw new Error("This task is not linked to a sheet. Assign a sheet before processing.");
+  if (!files.length) {
+    throw new Error("No files provided for processing.");
   }
 
   const apiKey = await getGeminiApiKey();
   if (!apiKey) {
-    taskProcessingLogger.error("Gemini API key missing", { data: { taskId: task.id } });
-    throw new Error("Set your Gemini API key in Account preferences before processing tasks.");
+    fileProcessingLogger.error("Gemini API key missing");
+    throw new Error("Set your Gemini API key in Account preferences before processing files.");
   }
 
+  emit?.("Creating sheet...");
+  const sheetId = await createSheetForFiles(
+    files.map((f) => f.id),
+    sheetName,
+  );
+  fileProcessingLogger.debug("Created sheet", { data: { sheetId, sheetName } });
+
   emit?.("Reading files from disk...");
-  await updateTaskStatus(taskId, "Processing");
+
+  // Update all files to "Processing" status
+  await Promise.all(files.map((file) => updateFileStatus(file.id, "Processing")));
 
   try {
-    const labelToFile = new Map<string, StoredTaskFile>();
+    const labelToFile = new Map<string, FileRecord>();
     const invoiceInputs: InvoiceFileInput[] = [];
     const fileIdsList: string[] = [];
 
-    for (const [index, file] of orderedFiles.entries()) {
-      const data = await readFileBinary(file.path);
+    for (const [index, file] of files.entries()) {
+      const data = await readFileBinary(file.storedPath);
       const buffer = ensureUint8Array(data);
       let sourceBuffer: ArrayBuffer;
       let offset = buffer.byteOffset;
@@ -166,12 +127,13 @@ export async function processTaskById(
       onProgress: (processed, total) => {
         const remaining = total - processed;
         emit?.(`Processing files: ${processed} processed, ${remaining} remaining`);
+        options?.onProgress?.(processed, total);
       },
     });
 
-    taskProcessingLogger.debug("Batch processing completed", {
+    fileProcessingLogger.debug("Batch processing completed", {
       data: {
-        taskId,
+        sheetId,
         successCount: results.length,
         errorCount: errors.length,
       },
@@ -185,10 +147,8 @@ export async function processTaskById(
       const payload = result.result;
 
       // Update file status and parsed details in database
-      await import("@/lib/tasks").then((mod) => {
-        mod.updateFileStatus(result.fileId, "Processed");
-        mod.updateFileParsedDetails(result.fileId, JSON.stringify(payload));
-      });
+      await updateFileStatus(result.fileId, "Processed");
+      await updateFileParsedDetails(result.fileId, JSON.stringify(payload));
 
       if (isStructuredPayload(payload)) {
         rows.push({
@@ -217,17 +177,15 @@ export async function processTaskById(
 
     // Update database for failed files
     for (const error of errors) {
-      await import("@/lib/tasks").then((mod) => {
-        mod.updateFileStatus(error.fileId, "Failed");
-        mod.updateFileParsedDetails(
-          error.fileId,
-          JSON.stringify({ error: error.error, statusCode: error.statusCode }),
-        );
-      });
+      await updateFileStatus(error.fileId, "Failed");
+      await updateFileParsedDetails(
+        error.fileId,
+        JSON.stringify({ error: error.error, statusCode: error.statusCode }),
+      );
 
-      taskProcessingLogger.warn("File processing failed", {
+      fileProcessingLogger.warn("File processing failed", {
         data: {
-          taskId,
+          sheetId,
           fileId: error.fileId,
           fileName: error.fileName,
           error: error.error,
@@ -235,25 +193,27 @@ export async function processTaskById(
       });
     }
 
-    await appendSheetRows(taskId, rows);
+    await appendSheetRows(sheetId, rows);
 
-    // Update task status based on results
+    // Provide feedback based on results
     if (errors.length === 0) {
-      await updateTaskStatus(taskId, "Completed");
-      emit?.("Task completed successfully.");
+      emit?.("Processing completed successfully.");
     } else if (results.length === 0) {
-      await updateTaskStatus(taskId, "Failed");
-      emit?.("Task failed: all files failed to process.");
+      emit?.("Processing failed: all files failed to process.");
     } else {
-      await updateTaskStatus(taskId, "Completed");
-      emit?.(`Task completed with ${errors.length} failed file(s).`);
+      emit?.(`Processing completed with ${errors.length} failed file(s).`);
     }
 
-    return { processedFiles: results.length };
+    return {
+      processedFiles: results.length,
+      failedFiles: errors.length,
+      sheetId,
+    };
   } catch (error) {
-    await updateTaskStatus(taskId, "Failed");
-    taskProcessingLogger.error("Task processing failed", {
-      data: { taskId },
+    // Mark all files as failed if processing crashes
+    await Promise.all(files.map((file) => updateFileStatus(file.id, "Failed")));
+    fileProcessingLogger.error("File processing failed", {
+      data: { sheetId },
       error,
     });
     throw error;

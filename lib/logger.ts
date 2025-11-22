@@ -98,7 +98,12 @@ const safeStringify = (value: unknown) => {
 
 const consoleAvailable = typeof console !== "undefined" ? console : null;
 
-const logToConsole = (level: LogLevel, source: string, message: string, details?: LoggerDetails) => {
+const logToConsole = (
+  level: LogLevel,
+  source: string,
+  message: string,
+  details?: LoggerDetails,
+) => {
   if (!consoleAvailable) {
     return;
   }
@@ -111,7 +116,9 @@ const logToConsole = (level: LogLevel, source: string, message: string, details?
     args.push(details.data);
   }
 
-  const method = (consoleAvailable as unknown as Record<string, (...values: unknown[]) => void>)[level];
+  const method = (consoleAvailable as unknown as Record<string, (...values: unknown[]) => void>)[
+    level
+  ];
   (method ?? consoleAvailable.log).apply(consoleAvailable, args);
 };
 
