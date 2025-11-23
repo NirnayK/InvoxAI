@@ -50,7 +50,7 @@ export function DownloadFilesAction({ selectedFiles }: DownloadFilesActionProps)
           savedCount += 1;
         } catch (error) {
           errorCount += 1;
-          logger.error("File download failed", { error, fileId: file.id });
+          logger.error("File download failed", { error, data: { fileId: file.id } });
         }
       }
     } finally {
