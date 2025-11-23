@@ -1,7 +1,6 @@
 use crate::db::storage_dir;
 use serde::Serialize;
 use std::fs;
-use std::path::Path;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
