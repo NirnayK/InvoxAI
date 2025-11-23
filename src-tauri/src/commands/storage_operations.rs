@@ -1,6 +1,7 @@
 use crate::db::storage_dir;
 use serde::Serialize;
 use std::fs;
+use std::path::Path;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -35,5 +36,25 @@ fn compute_storage_stats() -> Result<StorageStats, String> {
 
 #[tauri::command]
 pub fn get_storage_stats() -> Result<StorageStats, String> {
+    compute_storage_stats()
+}
+
+#[tauri::command]
+pub fn clear_processed_files() -> Result<StorageStats, String> {
+    let dir = storage_dir().map_err(|error| error.to_string())?;
+
+    if dir.exists() {
+        for entry in fs::read_dir(&dir).map_err(|error| error.to_string())? {
+            let entry = entry.map_err(|error| error.to_string())?;
+            let path = entry.path();
+
+            if path.is_file() {
+                fs::remove_file(&path).map_err(|error| error.to_string())?;
+            } else if path.is_dir() {
+                fs::remove_dir_all(&path).map_err(|error| error.to_string())?;
+            }
+        }
+    }
+
     compute_storage_stats()
 }

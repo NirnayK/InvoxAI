@@ -39,7 +39,10 @@ export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteCompl
   const [xmlDialogOpen, setXmlDialogOpen] = useState(false);
   const [xmlTargets, setXmlTargets] = useState<FileRecord[]>([]);
   const [generatingXml, setGeneratingXml] = useState(false);
-  const { deleteFiles, createXml, appendXml, generateXml: generateXmlMutation } = useFileMutations();
+  const [processingDialogOpen, setProcessingDialogOpen] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string>("");
+  const [processingProgress, setProcessingProgress] = useState<{ processed: number; total: number } | null>(null);
+  const { deleteFiles, createXml, appendXml, generateXml: generateXmlMutation, processFiles } = useFileMutations();
 
   const handleShowData = (file: FileRecord) => {
     let content = file.parsedDetails ?? "No extracted data yet.";
@@ -99,6 +102,40 @@ export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteCompl
     }
     setXmlTargets(targets);
     setXmlDialogOpen(true);
+  };
+
+  const handleRequestProcess = async (targets: FileRecord[]) => {
+    if (!targets.length) {
+      return;
+    }
+    setProcessingDialogOpen(true);
+    setProcessingStatus("Preparing files...");
+    setProcessingProgress({ processed: 0, total: targets.length });
+
+    try {
+      const result = await processFiles.mutateAsync({
+        files: targets,
+        options: {
+          onStatusUpdate: (message) => setProcessingStatus(message),
+          onProgress: (processed, total) => setProcessingProgress({ processed, total }),
+        },
+      });
+
+      if (result.processedFiles > 0) {
+        toast.success(`Successfully processed ${result.processedFiles} files.`);
+      }
+      if (result.failedFiles > 0) {
+        toast.error(`Failed to process ${result.failedFiles} files.`);
+      }
+      onProcessComplete?.();
+    } catch (error) {
+      console.error("Processing error:", error);
+      toast.error("An error occurred while processing files.");
+    } finally {
+      setProcessingDialogOpen(false);
+      setProcessingProgress(null);
+      setProcessingStatus("");
+    }
   };
 
   const handleXmlConfirm = async (mode: "new" | "append", nameOrId: string | number) => {
@@ -181,7 +218,11 @@ export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteCompl
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
 
-          <ProcessFilesAction selectedFiles={selectedFiles} onProcessComplete={onProcessComplete} />
+          <ProcessFilesAction
+            selectedFiles={selectedFiles}
+            disabled={processFiles.isPending}
+            onRequestProcess={handleRequestProcess}
+          />
 
           <ExportToXmlAction
             selectedFiles={selectedFiles}
@@ -253,6 +294,25 @@ export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteCompl
           onConfirm={handleXmlConfirm}
           fileCount={xmlTargets.length}
         />
+      ) : null}
+
+      {processingDialogOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="relative w-full max-w-md rounded-lg border bg-background p-6 shadow-lg">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div>
+                <h2 className="text-lg font-semibold">Processing files</h2>
+                <p className="text-sm text-muted-foreground">{processingStatus || "Starting..."}</p>
+              </div>
+            </div>
+            {processingProgress ? (
+              <div className="mt-4 text-sm text-muted-foreground">
+                Processed {processingProgress.processed} of {processingProgress.total}
+              </div>
+            ) : null}
+          </div>
+        </div>
       ) : null}
     </>
   );

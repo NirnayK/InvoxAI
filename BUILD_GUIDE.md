@@ -24,53 +24,27 @@ The build artifacts (DMG, App bundle) will be located in:
 
 ---
 
-## 2. Windows
+## 2. Windows & macOS (Automated CI/CD)
 
-Building for Windows from macOS is complex due to cross-compilation challenges with C dependencies (like SQLite). The recommended approaches are:
+We have set up a GitHub Action to automatically build for both **Windows** and **macOS** whenever you push a version tag (e.g., `v0.1.0`).
 
-### Option A: Build on a Windows Machine (Recommended)
-1.  Clone the repository on a Windows machine.
-2.  Install [Rust](https://www.rust-lang.org/tools/install).
-3.  Install [Node.js](https://nodejs.org/) and `pnpm`.
-4.  Install "C++ build tools" via Visual Studio Build Tools.
-5.  Run `pnpm tauri build`.
+### How to Trigger a Build
+1.  Commit your changes.
+2.  Tag the commit:
+    ```bash
+    git tag v0.1.0
+    git push origin v0.1.0
+    ```
+3.  Go to the "Actions" tab in your GitHub repository to watch the build.
+4.  Once complete, a new "Draft Release" will be created in the "Releases" section containing:
+    - `Invox AI_0.1.0_x64_en-US.msi` (Windows Installer)
+    - `Invox AI_0.1.0_x64.dmg` (macOS Installer)
+    - `Invox AI.app.tar.gz` (macOS App Bundle)
 
-### Option B: GitHub Actions (CI/CD)
-You can set up a GitHub Action to build for Windows automatically when you push code.
+### Configuration
+The workflow file is located at `.github/workflows/release.yml`. It uses the `tauri-apps/tauri-action` to handle the build process.
 
-Create `.github/workflows/release.yml`:
-
-```yaml
-name: Release
-on:
-  push:
-    tags:
-      - 'v*'
-
-jobs:
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-      - name: Install dependencies
-        run: pnpm install
-      - name: Build
-        run: pnpm tauri build
-        env:
-          # You'll need to set up signing secrets if you want signed builds
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-```
+> **Note:** We have skipped code signing for now. Windows users may see a "Windows protected your PC" warning (SmartScreen) when installing. They can click "More info" > "Run anyway" to install.
 
 ---
 
