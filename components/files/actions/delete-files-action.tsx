@@ -5,7 +5,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { deleteFiles, type FileRecord } from "@/lib/files";
+import { FileCommands, type FileRecord } from "@/lib/files";
 import { isTauriRuntime } from "@/lib/database";
 import { useFileSelection } from "./use-file-selection";
 
@@ -39,7 +39,7 @@ export function DeleteFilesAction({
         setDeleting(true);
         try {
             const fileIds = deleteTargets.map((f) => f.id);
-            await deleteFiles(fileIds);
+            await FileCommands.deleteFiles(fileIds);
             toast.success(`Deleted ${deleteTargets.length} files.`);
             onDeleteComplete?.();
             onProcessComplete?.(); // Refresh list

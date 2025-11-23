@@ -87,7 +87,7 @@ export function DataTable({
           const selected = table.getSelectedRowModel().rows.map((row) => row.original);
           return (
             <div className="flex justify-end">
-              <FileActions
+              <FileActionMenu
                 selectedFiles={selected}
                 onProcessComplete={onProcessComplete}
                 variant="header"
@@ -97,7 +97,7 @@ export function DataTable({
         },
         cell: ({ row }) => (
           <div className="flex justify-end">
-            <FileActions
+            <FileActionMenu
               selectedFiles={[row.original]}
               onProcessComplete={onProcessComplete}
               variant="row"

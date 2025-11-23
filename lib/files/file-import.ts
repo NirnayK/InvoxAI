@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import { isTauriRuntime } from "./database";
+import { isTauriRuntime } from "../database";
 
 export interface ImportedFileResult {
   id: string;

@@ -1,13 +1,13 @@
-import { readFileBinary } from "./filesystem";
+import { readFileBinary } from "../filesystem";
 
 import { MIME_BY_EXTENSION } from "@/lib/invoice/constants";
 import type { InvoiceFileInput } from "@/lib/invoice/helpers";
 
-import { isTauriRuntime } from "./database";
-import { getGeminiApiKey } from "./preferences";
-import { updateFileStatus, updateFileParsedDetails, type FileRecord } from "./files";
-import { createLogger } from "./logger";
-import { FILE_STATUS } from "./constants";
+import { FILE_STATUS } from "../constants";
+import { isTauriRuntime } from "../database";
+import { FileCommands, type FileRecord } from "./";
+import { createLogger } from "../logger";
+import { getGeminiApiKey } from "../preferences";
 
 const FALLBACK_MIME = "application/octet-stream";
 
@@ -72,7 +72,7 @@ export async function processFiles(
   emit?.("Reading files from disk...");
 
   // Update all files to "Processing" status
-  await Promise.all(files.map((file) => updateFileStatus(file.id, FILE_STATUS.PROCESSING)));
+  await Promise.all(files.map((file) => FileCommands.updateStatus(file.id, FILE_STATUS.PROCESSING)));
 
   try {
     const labelToFile = new Map<string, FileRecord>();
@@ -132,14 +132,14 @@ export async function processFiles(
       const payload = result.result;
 
       // Update file status and parsed details in database
-      await updateFileStatus(result.fileId, FILE_STATUS.PROCESSED);
-      await updateFileParsedDetails(result.fileId, JSON.stringify(payload));
+      await FileCommands.updateStatus(result.fileId, FILE_STATUS.PROCESSED);
+      await FileCommands.updateParsedDetails(result.fileId, JSON.stringify(payload));
     }
 
     // Update database for failed files
     for (const error of errors) {
-      await updateFileStatus(error.fileId, FILE_STATUS.FAILED);
-      await updateFileParsedDetails(
+      await FileCommands.updateStatus(error.fileId, FILE_STATUS.FAILED);
+      await FileCommands.updateParsedDetails(
         error.fileId,
         JSON.stringify({ error: error.error, statusCode: error.statusCode }),
       );
@@ -168,7 +168,7 @@ export async function processFiles(
     };
   } catch (error) {
     // Mark all files as failed if processing crashes
-    await Promise.all(files.map((file) => updateFileStatus(file.id, FILE_STATUS.FAILED)));
+    await Promise.all(files.map((file) => FileCommands.updateStatus(file.id, FILE_STATUS.FAILED)));
     fileProcessingLogger.error("File processing failed", {
       error,
     });

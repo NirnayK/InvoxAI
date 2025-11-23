@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Play } from "lucide-react";
-import { toast } from "sonner";
-import { processFiles } from "@/lib/file-processing";
 import type { FileRecord } from "@/lib/files";
+import { processFiles } from "@/lib/files/file-processing";
+import { Play } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { useFileSelection } from "./use-file-selection";
 
 interface ProcessFilesActionProps {

@@ -15,7 +15,7 @@ import {
 import { DataTable } from "@/components/files/data-table";
 import { FileUploadModal } from "@/components/files/upload/file-upload-modal";
 import { isTauriRuntime } from "@/lib/database";
-import { listFilesPaginated, type FileRecord } from "@/lib/files";
+import { FileQueries, type FileRecord } from "@/lib/files";
 import { createLogger } from "@/lib/logger";
 
 const dashboardLogger = createLogger("DashboardPage");
@@ -52,7 +52,7 @@ function FileList() {
       setError(null);
 
       try {
-        const result = await listFilesPaginated({
+        const result = await FileQueries.listFiles({
           limit: 25,
           offset: 0,
           sortBy: "created_at",

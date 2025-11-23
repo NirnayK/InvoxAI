@@ -5,8 +5,8 @@ import type { ChangeEvent, DragEvent } from "react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { importFiles } from "@/lib/files/file-import";
 import { ALLOWED_EXTENSIONS } from "@/lib/invoice/constants";
-import { importFiles } from "@/lib/file-import";
 
 interface FileUploadPanelProps {
   maxFiles?: number;
