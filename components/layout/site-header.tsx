@@ -17,12 +17,6 @@ export function SiteHeader() {
             Dashboard
           </Link>
           <Link
-            href="/new-task"
-            className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
-          >
-            New Task
-          </Link>
-          <Link
             href="/account"
             className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
           >

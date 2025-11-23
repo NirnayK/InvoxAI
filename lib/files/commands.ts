@@ -50,4 +50,26 @@ export const FileCommands = {
 
     await invoke("delete_files", { fileIds });
   },
+
+  /**
+   * Open files on the host operating system
+   */
+  async openFiles(paths: string[]): Promise<void> {
+    if (!isTauriRuntime()) {
+      throw new Error("File operations require the Tauri desktop runtime.");
+    }
+
+    await invoke("open_file_paths", { paths });
+  },
+
+  /**
+   * Copy a stored file to a destination path selected by the user
+   */
+  async copyFileToPath(sourcePath: string, targetPath: string, overwrite = false): Promise<void> {
+    if (!isTauriRuntime()) {
+      throw new Error("File operations require the Tauri desktop runtime.");
+    }
+
+    await invoke("copy_file_to_path", { sourcePath, targetPath, overwrite });
+  },
 };

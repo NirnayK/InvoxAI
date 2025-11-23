@@ -3,7 +3,8 @@ import { FileQueries } from "../files/queries";
 import { FileCommands } from "../files/commands";
 import { importFiles } from "../files/file-import";
 import { createXmlForFiles, appendXmlFile, generateXmlFile } from "../xml";
-import type { FileListQuery, FileStatus } from "../files/types";
+import type { FileListQuery, FileRecord, FileStatus } from "../files/types";
+import type { FileProcessingOptions } from "../files/file-processing";
 
 export function useFiles(query: FileListQuery) {
   return useQuery({
@@ -89,8 +90,8 @@ export function useFileMutations() {
       files,
       options,
     }: {
-      files: any[];
-      options?: any;
+      files: FileRecord[];
+      options?: FileProcessingOptions;
     }) => {
       const { processFiles } = await import("../files/file-processing");
       return processFiles(files, options);
