@@ -1,4 +1,4 @@
-import type { FileStatus } from "../constants";
+export type { FileStatus } from "../constants";
 
 export interface FileRecord {
   id: string;

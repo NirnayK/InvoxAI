@@ -11,6 +11,7 @@ The application provides a local-first, file-centric experience by storing all d
 - **Database:** SQLite via `tauri-plugin-sql` with automated schema migrations
 - **AI:** Google Gemini AI (via `@google/genai` package)
 - **UI Components:** Radix UI primitives with custom styling
+- **Data Layer:** Repository Pattern with CQRS (Command Query Responsibility Segregation)
 - **Additional Libraries:**
   - `react-hook-form` + `zod` for form validation
   - `@tanstack/react-table` for data tables
@@ -53,7 +54,7 @@ Stores information about generated XML exports:
 
 # Backend Commands
 
-The Tauri backend (`src-tauri/src/`) exposes the following commands to the frontend:
+The Tauri backend (`src-tauri/src/commands/`) exposes the following commands to the frontend:
 
 ## Filesystem Commands (`filesystem.rs`)
 
@@ -63,32 +64,29 @@ The Tauri backend (`src-tauri/src/`) exposes the following commands to the front
 - `save_file(path: String, content: String)` - Write text file
 - `create_directory(path: String)` - Create directory
 
-## File Import Commands (`commands.rs`)
+## File Operations (`file_operations.rs`)
 
 - `import_file(path: String)` - Import file from filesystem path
 - `import_data(file_name: String, bytes: Vec<u8>)` - Import file from bytes
 - `list_files()` - List recent files (limit 50)
 - `list_files_paginated(query: FileListQuery)` - List files with pagination, filtering, and sorting
-
-## File Management Commands (`commands.rs`)
-
 - `update_file_status(file_id: String, status: String)` - Update file processing status
 - `update_file_parsed_details(file_id: String, parsed_details: String)` - Update extracted data
 - `update_files_status(file_ids: Vec<String>, status: String)` - Batch update file statuses
 - `delete_files(file_ids: Vec<String>)` - Delete files from database and disk
 
-## Storage Commands (`commands.rs`)
+## Storage Operations (`storage_operations.rs`)
 
 - `get_storage_stats()` - Get storage directory stats (path, total bytes, file count)
 
-## XML Generation Commands (`commands.rs`)
+## XML Operations (`xml_operations.rs`)
 
 - `create_xml_for_files(file_ids: Vec<String>, xml_name: String)` - Create XML export record
 - `list_xml_files()` - List all XML exports
 - `append_xml_file(xml_id: i64, file_ids: Vec<String>)` - Add files to existing XML export
 - `generate_xml_file(xml_id: i64)` - Generate XML content from processed files
 
-## Logging Command (`commands.rs`)
+## Logging Operations (`logging_operations.rs`)
 
 - `append_log_entry(level: &str, message: &str, context: Option<String>, metadata: Option<String>)` - Append to `invox.log`
 
@@ -107,20 +105,36 @@ invox-ai/
 │   ├── theme/            # Theme provider and toggle
 │   └── ui/               # Radix UI-based components
 ├── lib/                   # Application libraries
+│   ├── files/            # File repository (CQRS pattern)
+│   │   ├── commands.ts   # Write operations
+│   │   ├── queries.ts    # Read operations
+│   │   ├── repository.ts # Repository interface
+│   │   ├── types.d.ts    # TypeScript types
+│   │   ├── file-import.ts # File import utilities
+│   │   └── file-processing.ts # File processing orchestration
 │   ├── invoice/          # Invoice processing logic
+│   │   ├── batch.ts      # Batch processing with retry
+│   │   ├── constants.ts  # Invoice schema and constants
+│   │   ├── helpers.ts    # Helper functions
+│   │   ├── process.ts    # AI processing logic
+│   │   └── types.d.ts    # Invoice types
+│   ├── xml/              # XML generation and management
+│   │   └── index.ts      # XML operations
+│   ├── constants.ts      # Shared constants (file statuses)
 │   ├── database.ts       # Database connection wrapper
-│   ├── file-import.ts    # File import utilities
-│   ├── file-processing.ts # File processing orchestration
-│   ├── files.ts          # File CRUD operations
 │   ├── filesystem.ts     # Filesystem command wrappers
 │   ├── logger.ts         # Logging utilities
 │   ├── preferences.ts    # User preferences (Gemini API key)
 │   ├── storage.ts        # Storage management
-│   ├── xml-generator.ts  # XML generation for Tally
-│   └── xml.ts            # XML utilities
+│   └── utils.ts          # Utility functions
 ├── src-tauri/             # Rust backend
 │   ├── src/
-│   │   ├── commands.rs   # Tauri command implementations
+│   │   ├── commands/     # Modular command implementations
+│   │   │   ├── file_operations.rs
+│   │   │   ├── xml_operations.rs
+│   │   │   ├── storage_operations.rs
+│   │   │   ├── logging_operations.rs
+│   │   │   └── mod.rs
 │   │   ├── db.rs         # Database schema and migrations
 │   │   ├── filesystem.rs # Filesystem command implementations
 │   │   └── main.rs       # Tauri app entry point
@@ -175,7 +189,7 @@ invox-ai/
 
 - **Code Style:** The project uses ESLint and Prettier to enforce a consistent code style. Run `pnpm lint` and `pnpm format` to check and format the code.
 - **Database Migrations:** Database schema migrations are defined in `src-tauri/src/db.rs` in the `schema_migrations()` function and are automatically applied when the Tauri application starts via the SQL plugin.
-- **Frontend-Backend Communication:** The frontend communicates with the Tauri backend by invoking commands defined in `src-tauri/src/main.rs`. These commands are exposed to the frontend via the `@tauri-apps/api` library.
+- **Frontend-Backend Communication:** The frontend communicates with the Tauri backend by invoking commands defined in `src-tauri/src/commands/`. These commands are exposed to the frontend via the `@tauri-apps/api` library.
 - **File Storage:** Files are stored in a content-addressable manner using BLAKE3 hashes. Duplicate files are automatically detected and deduplicated.
 - **Logging:** Only `info`, `warn`, and `error` levels are persisted to `invox.log` by default. Set `NEXT_PUBLIC_PERSIST_LOG_LEVEL=debug` to enable debug logging.
 - **API Keys:** The Gemini API key is stored via the desktop Account preferences page or can be provided through `NEXT_PUBLIC_GEMINI_API_KEY` environment variable.

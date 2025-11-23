@@ -3,6 +3,7 @@
 mod commands;
 mod db;
 mod filesystem;
+mod services;
 
 use commands::{
     append_log_entry, append_xml_file, create_xml_for_files, delete_files, generate_xml_file,

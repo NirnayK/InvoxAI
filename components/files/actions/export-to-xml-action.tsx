@@ -3,7 +3,6 @@
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import type { FileRecord } from "@/lib/files";
 import { saveFile } from "@/lib/filesystem";
-import { appendXmlFile, createXmlForFiles, generateXmlFile } from "@/lib/xml";
 import { convertToInvoiceData, generateTallyXml } from "@/lib/xml/xml-generator";
 import { save } from "@tauri-apps/plugin-dialog";
 import { FileText } from "lucide-react";
@@ -11,12 +10,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { XmlSelectionDialog } from "../xml-selection-dialog";
 import { useFileSelection } from "./use-file-selection";
+import { useFileMutations } from "@/lib/hooks/use-files";
 
 interface ExportToXmlActionProps {
     selectedFiles: FileRecord[];
 }
 
 export function ExportToXmlAction({ selectedFiles }: ExportToXmlActionProps) {
+    const { createXml, appendXml, generateXml } = useFileMutations();
     const [xmlDialogOpen, setXmlDialogOpen] = useState(false);
     const [generatingXml, setGeneratingXml] = useState(false);
     const { processedFiles } = useFileSelection(selectedFiles);
@@ -38,14 +39,20 @@ export function ExportToXmlAction({ selectedFiles }: ExportToXmlActionProps) {
             let xmlId: number;
 
             if (mode === "new") {
-                xmlId = await createXmlForFiles(fileIds, nameOrId as string);
+                xmlId = await createXml.mutateAsync({
+                    fileIds,
+                    xmlName: nameOrId as string,
+                });
             } else {
                 xmlId = nameOrId as number;
-                await appendXmlFile(xmlId, fileIds);
+                await appendXml.mutateAsync({
+                    xmlId,
+                    fileIds,
+                });
             }
 
             // Generate XML content
-            const result = await generateXmlFile(xmlId);
+            const result = await generateXml.mutateAsync(xmlId);
 
             // Parse JSON lines into InvoiceData objects
             const invoices = result.content

@@ -5,7 +5,7 @@ import type { ChangeEvent, DragEvent } from "react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { importFiles } from "@/lib/files/file-import";
+import { useFileMutations } from "@/lib/hooks/use-files";
 import { ALLOWED_EXTENSIONS } from "@/lib/invoice/constants";
 
 interface FileUploadPanelProps {
@@ -26,6 +26,7 @@ export function FileUploadPanel({
   accept = ALLOWED_EXTENSIONS.join(","),
   onComplete,
 }: FileUploadPanelProps) {
+  const { importFiles } = useFileMutations();
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState("");
@@ -105,7 +106,7 @@ export function FileUploadPanel({
     setIsUploading(true);
 
     try {
-      await importFiles(files);
+      await importFiles.mutateAsync(files);
       setFiles([]);
       onFilesChange?.([]);
       setError("");
@@ -134,9 +135,8 @@ export function FileUploadPanel({
         onDragOver={(event) => handleDrag(event, true)}
         onDragLeave={(event) => handleDrag(event, false)}
         onDrop={handleDrop}
-        className={`rounded-[28px] border-2 border-dashed p-10 text-center transition ${
-          isDragging ? "border-primary/60 bg-primary/10" : "border-border bg-muted/40 dark:bg-muted/10"
-        }`}
+        className={`rounded-[28px] border-2 border-dashed p-10 text-center transition ${isDragging ? "border-primary/60 bg-primary/10" : "border-border bg-muted/40 dark:bg-muted/10"
+          }`}
       >
         <input
           ref={inputRef}
@@ -235,7 +235,7 @@ export function FileUploadPanel({
                 <Button
                   type="button"
                   onClick={handleUpload}
-                  disabled={isUploading}
+                  disabled={isUploading || importFiles.isPending}
                   className="gap-2 rounded-2xl px-5 py-2 text-sm font-semibold"
                 >
                   {`Upload ${files.length} file${files.length === 1 ? "" : "s"}`}

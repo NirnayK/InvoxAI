@@ -1,5 +1,4 @@
-use crate::db::{get_connection, storage_dir};
-use blake3;
+use crate::db::get_connection;
 use chrono::Utc;
 use rusqlite::{params, Row};
 use serde::{Deserialize, Serialize};
@@ -81,6 +80,12 @@ pub struct FileListQuery {
     pub sort_order: Option<String>,
 }
 
+use crate::services::{
+    file_hasher::FileHasher,
+    file_metadata::FileMetadata,
+    file_storage::FileStorage,
+};
+
 fn file_row_from_row(row: &Row) -> rusqlite::Result<FileRow> {
     Ok(FileRow {
         id: row.get(0)?,
@@ -90,49 +95,28 @@ fn file_row_from_row(row: &Row) -> rusqlite::Result<FileRow> {
 }
 
 fn persist_buffer(file_name: &str, buffer: &[u8]) -> Result<String, String> {
-    let hash = blake3::hash(buffer);
-    let hash_hex = hash.to_hex().to_string();
+    // 1. Calculate Hash
+    let hash_hex = FileHasher::calculate_hash(buffer);
 
-    let conn = get_connection().map_err(|error| error.to_string())?;
-    let mut stmt = conn
-        .prepare("SELECT id FROM files WHERE hash_sha256 = ?1 LIMIT 1")
-        .map_err(|error| error.to_string())?;
-
-    let existing: Result<String, _> = stmt.query_row(params![hash_hex.clone()], |row| row.get(0));
-
-    if let Ok(existing_id) = existing {
+    // 2. Check for Duplicates
+    if let Some(existing_id) = FileMetadata::check_duplicate(&hash_hex)? {
         return Ok(format!("DUPLICATE:{}", existing_id));
     }
 
+    // 3. Generate ID
     let id = Uuid::new_v4().to_string();
-    let storage = storage_dir().map_err(|error| error.to_string())?;
-    let original_path = Path::new(file_name);
 
-    let ext = original_path
-        .extension()
-        .and_then(|s| s.to_str())
-        .unwrap_or("");
+    // 4. Write to Disk
+    let stored_path = FileStorage::save_file(&id, file_name, buffer)?;
 
-    let stored_path = if ext.is_empty() {
-        storage.join(&id)
-    } else {
-        storage.join(format!("{}.{}", &id, ext))
-    };
-
-    fs::write(&stored_path, buffer).map_err(|error| error.to_string())?;
-
-    conn.execute(
-        "INSERT INTO files (id, hash_sha256, file_name, stored_path, size_bytes, parsed_details)
-         VALUES (?1, ?2, ?3, ?4, ?5, NULL)",
-        params![
-            id,
-            hash_hex,
-            file_name,
-            stored_path.to_string_lossy().to_string(),
-            buffer.len() as i64
-        ],
-    )
-    .map_err(|error| error.to_string())?;
+    // 5. Write to Database
+    FileMetadata::save_metadata(
+        &id,
+        &hash_hex,
+        file_name,
+        stored_path.to_string_lossy().as_ref(),
+        buffer.len() as i64,
+    )?;
 
     Ok(format!("OK:{}", id))
 }

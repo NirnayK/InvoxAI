@@ -15,92 +15,26 @@ import {
 import { DataTable } from "@/components/files/data-table";
 import { FileUploadModal } from "@/components/files/upload/file-upload-modal";
 import { isTauriRuntime } from "@/lib/database";
-import { FileQueries, type FileRecord } from "@/lib/files";
-import { createLogger } from "@/lib/logger";
+import { useFiles } from "@/lib/hooks/use-files";
 
-const dashboardLogger = createLogger("DashboardPage");
+
 
 function FileList() {
-  const [files, setFiles] = useState<FileRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [runtimeChecked, setRuntimeChecked] = useState(false);
-  const [tauriAvailable, setTauriAvailable] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshIndex, setRefreshIndex] = useState(0);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const { data, isLoading, isError, error, refetch } = useFiles({
+    limit: 25,
+    offset: 0,
+    sortBy: "created_at",
+    sortOrder: "DESC",
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadFiles = async () => {
-      const available = isTauriRuntime();
-      if (cancelled) {
-        return;
-      }
-
-      setTauriAvailable(available);
-      setRuntimeChecked(true);
-
-      if (!available) {
-        setFiles([]);
-        setError(null);
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const result = await FileQueries.listFiles({
-          limit: 25,
-          offset: 0,
-          sortBy: "created_at",
-          sortOrder: "DESC",
-        });
-
-        if (!cancelled) {
-          setFiles(result.files);
-        }
-      } catch (loadError) {
-        dashboardLogger.error("Failed to load files", { error: loadError });
-        if (!cancelled) {
-          setFiles([]);
-          setError("Unable to load files from the local database.");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadFiles();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshIndex]);
-
-  const handleRefresh = () => {
-    setRefreshIndex((value) => value + 1);
-  };
-
-  const handleUploadComplete = () => {
-    handleRefresh();
-  };
-
-  const handleProcessComplete = () => {
-    handleRefresh();
-  };
-
+  const files = data?.files ?? [];
   const hasFiles = files.length > 0;
-  const shouldShowLoadingState = (!runtimeChecked && !hasFiles) || (isLoading && !hasFiles);
-  const shouldShowTauriState = runtimeChecked && !tauriAvailable;
+  const isTauri = isTauriRuntime();
 
   let content: React.ReactNode = null;
 
-  if (shouldShowLoadingState) {
+  if (isLoading) {
     content = (
       <Empty className="mt-6">
         <EmptyHeader>
@@ -112,7 +46,7 @@ function FileList() {
         </EmptyHeader>
       </Empty>
     );
-  } else if (shouldShowTauriState) {
+  } else if (!isTauri) {
     content = (
       <Empty className="mt-6">
         <EmptyHeader>
@@ -129,14 +63,14 @@ function FileList() {
           <Button
             variant="outline"
             className="rounded-2xl px-5 py-2 text-sm font-semibold"
-            onClick={handleRefresh}
+            onClick={() => refetch()}
           >
             Retry
           </Button>
         </EmptyContent>
       </Empty>
     );
-  } else if (error) {
+  } else if (isError) {
     content = (
       <Empty className="mt-6">
         <EmptyHeader>
@@ -144,14 +78,13 @@ function FileList() {
             <Inbox className="h-6 w-6" />
           </EmptyMedia>
           <EmptyTitle>Unable to load files</EmptyTitle>
-          <EmptyDescription>{error}</EmptyDescription>
+          <EmptyDescription>{error instanceof Error ? error.message : "Unknown error"}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button
             variant="outline"
             className="rounded-2xl px-5 py-2 text-sm font-semibold"
-            onClick={handleRefresh}
-            disabled={isLoading}
+            onClick={() => refetch()}
           >
             Retry
           </Button>
@@ -160,7 +93,7 @@ function FileList() {
     );
   } else if (hasFiles) {
     content = (
-      <DataTable data={files} onProcessComplete={handleProcessComplete} />
+      <DataTable data={files} />
     );
   } else {
     content = (
@@ -209,7 +142,7 @@ function FileList() {
       <FileUploadModal
         open={uploadModalOpen}
         onOpenChange={setUploadModalOpen}
-        onUploadComplete={handleUploadComplete}
+        onUploadComplete={() => refetch()}
       />
     </>
   );

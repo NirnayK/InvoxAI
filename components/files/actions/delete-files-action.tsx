@@ -5,9 +5,10 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { FileCommands, type FileRecord } from "@/lib/files";
+import { type FileRecord } from "@/lib/files";
 import { isTauriRuntime } from "@/lib/database";
 import { useFileSelection } from "./use-file-selection";
+import { useFileMutations } from "@/lib/hooks/use-files";
 
 interface DeleteFilesActionProps {
     selectedFiles: FileRecord[];
@@ -22,7 +23,7 @@ export function DeleteFilesAction({
     onProcessComplete,
     processing = false,
 }: DeleteFilesActionProps) {
-    const [deleting, setDeleting] = useState(false);
+    const { deleteFiles } = useFileMutations();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [deleteTargets, setDeleteTargets] = useState<FileRecord[]>([]);
     const { hasSelection } = useFileSelection(selectedFiles);
@@ -36,10 +37,9 @@ export function DeleteFilesAction({
     const confirmDeleteFiles = async () => {
         if (deleteTargets.length === 0) return;
 
-        setDeleting(true);
         try {
             const fileIds = deleteTargets.map((f) => f.id);
-            await FileCommands.deleteFiles(fileIds);
+            await deleteFiles.mutateAsync(fileIds);
             toast.success(`Deleted ${deleteTargets.length} files.`);
             onDeleteComplete?.();
             onProcessComplete?.(); // Refresh list
@@ -47,7 +47,6 @@ export function DeleteFilesAction({
             console.error("Delete error:", error);
             toast.error("Failed to delete files.");
         } finally {
-            setDeleting(false);
             setShowDeleteDialog(false);
             setDeleteTargets([]);
         }
@@ -78,11 +77,11 @@ export function DeleteFilesAction({
                             {deleteTargets.length} file{deleteTargets.length === 1 ? "" : "s"} will be permanently removed.
                         </p>
                         <div className="mt-6 flex justify-end gap-2">
-                            <Button variant="outline" onClick={cancelDeleteFiles} disabled={deleting}>
+                            <Button variant="outline" onClick={cancelDeleteFiles} disabled={deleteFiles.isPending}>
                                 Cancel
                             </Button>
-                            <Button variant="destructive" onClick={confirmDeleteFiles} disabled={deleting}>
-                                {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            <Button variant="destructive" onClick={confirmDeleteFiles} disabled={deleteFiles.isPending}>
+                                {deleteFiles.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 Delete
                             </Button>
                         </div>
