@@ -85,6 +85,7 @@ use crate::services::{
     file_metadata::FileMetadata,
     file_storage::FileStorage,
 };
+use std::path::PathBuf;
 
 fn file_row_from_row(row: &Row) -> rusqlite::Result<FileRow> {
     Ok(FileRow {
@@ -248,6 +249,51 @@ pub fn list_files_paginated(query: FileListQuery) -> Result<PaginatedFilesResult
         files,
         total_count,
     })
+}
+
+#[tauri::command]
+pub fn open_file_paths(paths: Vec<String>) -> Result<(), String> {
+    for raw in paths {
+        let trimmed = raw.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let path = PathBuf::from(trimmed);
+        if !path.exists() {
+            return Err(format!("File not found: {}", trimmed));
+        }
+        open::that(&path).map_err(|error| format!("Failed to open {}: {}", trimmed, error))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn copy_file_to_path(source_path: String, target_path: String, overwrite: Option<bool>) -> Result<(), String> {
+    if source_path.trim().is_empty() {
+        return Err("Missing source path".to_string());
+    }
+    if target_path.trim().is_empty() {
+        return Err("Missing destination path".to_string());
+    }
+
+    let source = PathBuf::from(source_path);
+    if !source.exists() {
+        return Err("Source file not found".to_string());
+    }
+
+    let destination = PathBuf::from(&target_path);
+    if destination.exists() && overwrite != Some(true) {
+        return Err(format!("Destination already exists: {}", target_path));
+    }
+
+    if let Some(parent) = destination.parent() {
+        if !parent.exists() {
+            std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+        }
+    }
+
+    std::fs::copy(&source, &destination).map_err(|error| error.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]

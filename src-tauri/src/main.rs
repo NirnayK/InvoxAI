@@ -6,9 +6,9 @@ mod filesystem;
 mod services;
 
 use commands::{
-    append_log_entry, append_xml_file, create_xml_for_files, delete_files, generate_xml_file,
-    get_storage_stats, import_data, import_file, list_files, list_files_paginated,
-    list_xml_files, update_file_parsed_details, update_file_status, update_files_status,
+    append_log_entry, append_xml_file, copy_file_to_path, create_xml_for_files, delete_files, generate_xml_file,
+    get_storage_stats, import_data, import_file, list_files, list_files_paginated, list_xml_files,
+    open_file_paths, update_file_parsed_details, update_file_status, update_files_status,
 };
 use filesystem::{create_directory, list_directory, read_binary_file, read_file, save_file};
 use db::schema_migrations;
@@ -44,7 +44,9 @@ fn main() {
             update_file_status,
             update_file_parsed_details,
             update_files_status,
-            delete_files
+            delete_files,
+            open_file_paths,
+            copy_file_to_path
         ])
         .run(tauri::generate_context!())
         .expect("error while running Invox AI desktop shell");
