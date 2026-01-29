@@ -15,11 +15,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { clearStoredFiles, getStorageStats, type StorageStats } from "@/lib/storage";
 import { createLogger } from "@/lib/logger";
+import {
+  ACCOUNT_STORE_FILE,
+  GEMINI_KEY_PREF_KEY,
+  GEMINI_MODEL_CATALOG_URL_PREF_KEY,
+} from "@/lib/preferences";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
-
-const STORE_FILE_NAME = "account.preferences.json";
-const GEMINI_KEY_PREF_KEY = "geminiApiKey";
 
 type StatusVariant = "info" | "success" | "error";
 
@@ -52,6 +54,7 @@ const accountLogger = createLogger("AccountPage");
 
 export default function AccountPage() {
   const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [geminiModelCatalogUrl, setGeminiModelCatalogUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -100,7 +103,7 @@ export default function AccountPage() {
 
       try {
         const { Store } = await import("@tauri-apps/plugin-store");
-        const store = await Store.load(STORE_FILE_NAME);
+        const store = await Store.load(ACCOUNT_STORE_FILE);
         if (cancelled) {
           return;
         }
@@ -108,9 +111,13 @@ export default function AccountPage() {
         storeRef.current = store;
 
         const storedApiKey = await store.get<string>(GEMINI_KEY_PREF_KEY);
+        const storedCatalogUrl = await store.get<string>(GEMINI_MODEL_CATALOG_URL_PREF_KEY);
 
         if (!cancelled && storedApiKey) {
           setGeminiApiKey(storedApiKey);
+        }
+        if (!cancelled && storedCatalogUrl) {
+          setGeminiModelCatalogUrl(storedCatalogUrl);
         }
       } catch (error) {
         accountLogger.error("Failed to load saved account preferences", { error });
@@ -148,11 +155,18 @@ export default function AccountPage() {
     try {
       const store = storeRef.current;
       const sanitizedKey = geminiApiKey.trim();
+      const sanitizedCatalogUrl = geminiModelCatalogUrl.trim();
 
       if (sanitizedKey) {
         await store.set(GEMINI_KEY_PREF_KEY, sanitizedKey);
       } else {
         await store.delete(GEMINI_KEY_PREF_KEY);
+      }
+
+      if (sanitizedCatalogUrl) {
+        await store.set(GEMINI_MODEL_CATALOG_URL_PREF_KEY, sanitizedCatalogUrl);
+      } else {
+        await store.delete(GEMINI_MODEL_CATALOG_URL_PREF_KEY);
       }
 
       await store.save();
@@ -248,6 +262,25 @@ export default function AccountPage() {
                       {showGeminiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="gemini-model-catalog-url">
+                    Gemini model catalog URL
+                  </FieldLabel>
+                  <FieldDescription>
+                    The Google Drive URL to a JSON catalog that defines available Gemini models.
+                    You can also set <code>NEXT_PUBLIC_GEMINI_MODEL_CATALOG_URL</code> (or{" "}
+                    <code>GEMINI_MODEL_CATALOG_URL</code>) before launching the desktop shell
+                    instead of storing it here.
+                  </FieldDescription>
+                  <Input
+                    id="gemini-model-catalog-url"
+                    type="url"
+                    value={geminiModelCatalogUrl}
+                    autoComplete="off"
+                    onChange={(event) => setGeminiModelCatalogUrl(event.target.value)}
+                    placeholder="https://drive.google.com/uc?export=download&id=..."
+                  />
                 </Field>
               </FieldGroup>
             </FieldSet>

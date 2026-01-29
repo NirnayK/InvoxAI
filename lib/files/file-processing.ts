@@ -8,8 +8,14 @@ import { isTauriRuntime } from "../database";
 import { FileCommands, type FileRecord } from "./";
 import { createLogger } from "../logger";
 import { getGeminiApiKey } from "../preferences";
+import {
+  getGeminiDefaultModel,
+  getGeminiModelFallbackOrder,
+} from "@/lib/invoice/model-catalog";
+import { processInvoices } from "@/lib/invoice/process";
 
 const FALLBACK_MIME = "application/octet-stream";
+const PER_FILE_TIMEOUT_MS = 2 * 60 * 1000;
 
 const inferMimeType = (name?: string | null, fallback?: string | null) => {
   if (fallback) {
@@ -42,6 +48,20 @@ export interface FileProcessingOptions {
 }
 
 const fileProcessingLogger = createLogger("FileProcessing");
+
+const withTimeout = async <T>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("Request timed out after 2 minutes")), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+};
 
 /**
  * Process a selection of files and create a sheet with the results
@@ -103,20 +123,62 @@ export async function processFiles(
 
     emit?.(`Processing ${invoiceInputs.length} files...`);
 
-    // Import batch processing function
-    const { processBatchWithRetry } = await import("@/lib/invoice/process");
+    const fallbackOrder = await getGeminiModelFallbackOrder();
+    const defaultModel = await getGeminiDefaultModel();
+    const modelsToTry = fallbackOrder.length > 0 ? fallbackOrder : [defaultModel];
 
-    // Process files in batches with retry logic
-    const { results, errors } = await processBatchWithRetry({
-      files: invoiceInputs,
-      fileIds: fileIdsList,
-      apiKey,
-      onProgress: (processed, total) => {
-        const remaining = total - processed;
-        emit?.(`Processing files: ${processed} processed, ${remaining} remaining`);
-        options?.onProgress?.(processed, total);
-      },
-    });
+    const results: import("@/lib/invoice/types").BatchExtractionResult[] = [];
+    const errors: import("@/lib/invoice/types").ProcessingError[] = [];
+
+    for (let index = 0; index < invoiceInputs.length; index += 1) {
+      const file = invoiceInputs[index];
+      const fileId = fileIdsList[index];
+      const fileName = file.displayName ?? `file-${index + 1}`;
+      let lastError: Error | null = null;
+      let processed = false;
+
+      for (const model of modelsToTry) {
+        try {
+          const result = await withTimeout(
+            processInvoices({ files: [file], model, apiKey }),
+            PER_FILE_TIMEOUT_MS,
+          );
+          if (result.length > 0) {
+            results.push({
+              fileId,
+              fileName,
+              result: result[0].result,
+            });
+            processed = true;
+            break;
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+          const is429 =
+            error instanceof Error &&
+            (error.message.includes("429") ||
+              error.message.toLowerCase().includes("rate limit") ||
+              error.message.toLowerCase().includes("quota"));
+          if (!is429) {
+            break;
+          }
+        }
+      }
+
+      if (!processed) {
+        errors.push({
+          fileId,
+          fileName,
+          error: lastError?.message ?? "Unknown error",
+          statusCode: lastError?.message.includes("429") ? 429 : undefined,
+        });
+      }
+
+      const processedCount = results.length + errors.length;
+      const remaining = invoiceInputs.length - processedCount;
+      emit?.(`Processing files: ${processedCount} processed, ${remaining} remaining`);
+      options?.onProgress?.(processedCount, invoiceInputs.length);
+    }
 
     fileProcessingLogger.debug("Batch processing completed", {
       data: {

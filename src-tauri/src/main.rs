@@ -12,10 +12,11 @@ use commands::{
     update_files_status,
 };
 use filesystem::{create_directory, list_directory, read_binary_file, read_file, save_file};
-use db::schema_migrations;
+use db::{reset_gemini_model_usage_if_new_day, schema_migrations};
 use tauri_plugin_dialog::init as DialogPlugin;
 use tauri_plugin_sql::Builder as SqlPluginBuilder;
 use tauri_plugin_store::Builder as StorePluginBuilder;
+use std::time::Duration;
 
 fn main() {
     tauri::Builder::default()
@@ -26,6 +27,15 @@ fn main() {
         )
         .plugin(DialogPlugin())
         .plugin(StorePluginBuilder::default().build())
+        .setup(|_| {
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    let _ = reset_gemini_model_usage_if_new_day();
+                    tauri::async_runtime::sleep(Duration::from_secs(60 * 60)).await;
+                }
+            });
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             list_directory,
             read_binary_file,

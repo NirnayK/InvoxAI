@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/layout/site-header";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { GeminiModelCatalogBootstrap } from "@/components/providers/gemini-model-catalog-bootstrap";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { Metadata } from "next";
@@ -36,6 +37,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
+            <GeminiModelCatalogBootstrap />
             <SiteHeader />
             {children}
             <Toaster />

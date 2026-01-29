@@ -58,13 +58,13 @@ export interface ProcessingError {
 }
 
 export interface InvoiceFileInput {
-  file: string | Blob;
+  file: Blob;
   mimeType?: string;
   displayName?: string;
 }
 
 export interface NormalizedFile {
-  source: string | Blob;
+  source: Blob;
   mimeType: string;
   displayName?: string;
   label: string;

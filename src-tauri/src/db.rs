@@ -2,6 +2,9 @@ use std::fs;
 use std::path::PathBuf;
 use rusqlite::{Connection, Error as SqlError, Result as SqlResult};
 use tauri_plugin_sql::{Migration, MigrationKind};
+use chrono::Utc;
+use chrono_tz::America::Los_Angeles;
+use rusqlite::params;
 
 const APP_DIR_NAME: &str = "com.invox.ai";
 const DB_FILE_NAME: &str = "app.db";
@@ -49,6 +52,23 @@ const CORE_SCHEMA: &str = r#"
     BEGIN
       UPDATE xml_files SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
     END;
+
+    CREATE TABLE IF NOT EXISTS gemini_model_usage (
+      model TEXT PRIMARY KEY,
+      day TEXT NOT NULL,
+      minute_window_start INTEGER NOT NULL,
+      requests_minute INTEGER NOT NULL DEFAULT 0,
+      requests_day INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TRIGGER IF NOT EXISTS gemini_model_usage_touch_updated_at
+    AFTER UPDATE ON gemini_model_usage
+    FOR EACH ROW
+    WHEN NEW.updated_at <= OLD.updated_at
+    BEGIN
+      UPDATE gemini_model_usage SET updated_at = CURRENT_TIMESTAMP WHERE model = OLD.model;
+    END;
 "#;
 
 fn base_data_dir() -> PathBuf {
@@ -91,6 +111,26 @@ pub fn get_connection() -> SqlResult<Connection> {
     Ok(conn)
 }
 
+pub fn reset_gemini_model_usage_if_new_day() -> Result<(), String> {
+    let conn = get_connection().map_err(|error| error.to_string())?;
+    let now = Utc::now();
+    let today = now
+        .with_timezone(&Los_Angeles)
+        .format("%Y-%m-%d")
+        .to_string();
+    let now_ms = now.timestamp_millis();
+
+    conn.execute(
+        "UPDATE gemini_model_usage \
+         SET day = ?, minute_window_start = ?, requests_minute = 0, requests_day = 0 \
+         WHERE day <> ?",
+        params![today, now_ms, today],
+    )
+    .map_err(|error| error.to_string())?;
+
+    Ok(())
+}
+
 fn init_schema(conn: &Connection) -> SqlResult<()> {
     conn.execute_batch(CORE_SCHEMA)?;
     ensure_processed_at_column(conn)?;
@@ -129,6 +169,29 @@ pub fn schema_migrations() -> Vec<Migration> {
             version: 2,
             description: "drop orphaned sheets table".into(),
             sql: "DROP TABLE IF EXISTS sheets;".into(),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 3,
+            description: "add gemini model usage tracking".into(),
+            sql: r#"
+                CREATE TABLE IF NOT EXISTS gemini_model_usage (
+                  model TEXT PRIMARY KEY,
+                  day TEXT NOT NULL,
+                  minute_window_start INTEGER NOT NULL,
+                  requests_minute INTEGER NOT NULL DEFAULT 0,
+                  requests_day INTEGER NOT NULL DEFAULT 0,
+                  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE TRIGGER IF NOT EXISTS gemini_model_usage_touch_updated_at
+                AFTER UPDATE ON gemini_model_usage
+                FOR EACH ROW
+                WHEN NEW.updated_at <= OLD.updated_at
+                BEGIN
+                  UPDATE gemini_model_usage SET updated_at = CURRENT_TIMESTAMP WHERE model = OLD.model;
+                END;
+            "#.into(),
             kind: MigrationKind::Up,
         },
     ]
