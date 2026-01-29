@@ -8,10 +8,7 @@ import { isTauriRuntime } from "../database";
 import { FileCommands, type FileRecord } from "./";
 import { createLogger } from "../logger";
 import { getGeminiApiKey } from "../preferences";
-import {
-  getGeminiDefaultModel,
-  getGeminiModelFallbackOrder,
-} from "@/lib/invoice/model-catalog";
+import { getGeminiDefaultModel, getGeminiModelFallbackOrder } from "@/lib/invoice/model-catalog";
 import { processInvoices } from "@/lib/invoice/process";
 
 const FALLBACK_MIME = "application/octet-stream";
@@ -92,7 +89,9 @@ export async function processFiles(
   emit?.("Reading files from disk...");
 
   // Update all files to "Processing" status
-  await Promise.all(files.map((file) => FileCommands.updateStatus(file.id, FILE_STATUS.PROCESSING)));
+  await Promise.all(
+    files.map((file) => FileCommands.updateStatus(file.id, FILE_STATUS.PROCESSING)),
+  );
 
   try {
     const labelToFile = new Map<string, FileRecord>();

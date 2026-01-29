@@ -11,7 +11,11 @@ interface ProcessFilesActionProps {
   onRequestProcess?: (files: FileRecord[]) => void;
 }
 
-export function ProcessFilesAction({ selectedFiles, disabled = false, onRequestProcess }: ProcessFilesActionProps) {
+export function ProcessFilesAction({
+  selectedFiles,
+  disabled = false,
+  onRequestProcess,
+}: ProcessFilesActionProps) {
   const { unprocessedFiles } = useFileSelection(selectedFiles);
   const isDisabled = disabled || unprocessedFiles.length === 0;
 

@@ -20,10 +20,7 @@ const getEnvGeminiModelCatalogUrl = () => {
   if (typeof process === "undefined" || !process.env) {
     return undefined;
   }
-  return (
-    process.env.NEXT_PUBLIC_GEMINI_MODEL_CATALOG_URL ??
-    process.env.GEMINI_MODEL_CATALOG_URL
-  );
+  return process.env.NEXT_PUBLIC_GEMINI_MODEL_CATALOG_URL ?? process.env.GEMINI_MODEL_CATALOG_URL;
 };
 
 export async function getGeminiApiKey(): Promise<string | null> {

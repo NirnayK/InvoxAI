@@ -88,7 +88,8 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-const getUpdatedTimestamp = (file: FileModel) => file.updatedAt ?? file.processedAt ?? file.createdAt;
+const getUpdatedTimestamp = (file: FileModel) =>
+  file.updatedAt ?? file.processedAt ?? file.createdAt;
 
 export const columns: ColumnDef<FileModel>[] = [
   {
@@ -147,7 +148,10 @@ export const columns: ColumnDef<FileModel>[] = [
       const created = formatAbsoluteDate(row.original.createdAt);
       const relative = formatRelativeTime(row.original.createdAt);
       return (
-        <span className="text-sm text-muted-foreground" title={created?.toLocaleString() ?? undefined}>
+        <span
+          className="text-sm text-muted-foreground"
+          title={created?.toLocaleString() ?? undefined}
+        >
           {relative}
         </span>
       );
@@ -160,7 +164,10 @@ export const columns: ColumnDef<FileModel>[] = [
       const timestamp = getUpdatedTimestamp(row.original);
       const absolute = formatAbsoluteDate(timestamp);
       return (
-        <span className="text-sm text-muted-foreground" title={absolute?.toLocaleString() ?? undefined}>
+        <span
+          className="text-sm text-muted-foreground"
+          title={absolute?.toLocaleString() ?? undefined}
+        >
           {formatRelativeTime(timestamp)}
         </span>
       );

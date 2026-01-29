@@ -11,7 +11,11 @@ interface DeleteFilesActionProps {
   onRequestDelete?: (targets: FileRecord[]) => void;
 }
 
-export function DeleteFilesAction({ selectedFiles, disabled = false, onRequestDelete }: DeleteFilesActionProps) {
+export function DeleteFilesAction({
+  selectedFiles,
+  disabled = false,
+  onRequestDelete,
+}: DeleteFilesActionProps) {
   const hasSelection = selectedFiles.length > 0;
   const runtimeReady = isTauriRuntime();
   const isDisabled = disabled || !hasSelection || !runtimeReady;

@@ -79,13 +79,7 @@ const upsertUsageRow = async (row: UsageRow) => {
        requests_minute = excluded.requests_minute,
        requests_day = excluded.requests_day,
        updated_at = CURRENT_TIMESTAMP`,
-    [
-      row.model,
-      row.day,
-      row.minute_window_start,
-      row.requests_minute,
-      row.requests_day,
-    ],
+    [row.model, row.day, row.minute_window_start, row.requests_minute, row.requests_day],
   );
 };
 

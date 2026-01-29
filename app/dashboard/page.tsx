@@ -17,8 +17,6 @@ import { FileUploadModal } from "@/components/files/upload/file-upload-modal";
 import { isTauriRuntime } from "@/lib/database";
 import { useFiles } from "@/lib/hooks/use-files";
 
-
-
 function FileList() {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const { data, isLoading, isError, error, refetch } = useFiles({
@@ -78,7 +76,9 @@ function FileList() {
             <Inbox className="h-6 w-6" />
           </EmptyMedia>
           <EmptyTitle>Unable to load files</EmptyTitle>
-          <EmptyDescription>{error instanceof Error ? error.message : "Unknown error"}</EmptyDescription>
+          <EmptyDescription>
+            {error instanceof Error ? error.message : "Unknown error"}
+          </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button
@@ -92,9 +92,7 @@ function FileList() {
       </Empty>
     );
   } else if (hasFiles) {
-    content = (
-      <DataTable data={files} />
-    );
+    content = <DataTable data={files} />;
   } else {
     content = (
       <Empty className="mt-6">

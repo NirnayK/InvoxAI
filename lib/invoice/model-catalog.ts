@@ -232,9 +232,7 @@ export async function getGeminiModelFallbackOrder(): Promise<string[]> {
   return catalog.fallbackOrder.length > 0 ? catalog.fallbackOrder : catalog.models.slice();
 }
 
-export async function getGeminiModelRateLimits(): Promise<
-  Record<string, GeminiModelRateLimit>
-> {
+export async function getGeminiModelRateLimits(): Promise<Record<string, GeminiModelRateLimit>> {
   const catalog = await getGeminiModelCatalog();
   return catalog.rateLimits;
 }

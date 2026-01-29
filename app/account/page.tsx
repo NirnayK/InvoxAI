@@ -268,8 +268,8 @@ export default function AccountPage() {
                     Gemini model catalog URL
                   </FieldLabel>
                   <FieldDescription>
-                    The Google Drive URL to a JSON catalog that defines available Gemini models.
-                    You can also set <code>NEXT_PUBLIC_GEMINI_MODEL_CATALOG_URL</code> (or{" "}
+                    The Google Drive URL to a JSON catalog that defines available Gemini models. You
+                    can also set <code>NEXT_PUBLIC_GEMINI_MODEL_CATALOG_URL</code> (or{" "}
                     <code>GEMINI_MODEL_CATALOG_URL</code>) before launching the desktop shell
                     instead of storing it here.
                   </FieldDescription>

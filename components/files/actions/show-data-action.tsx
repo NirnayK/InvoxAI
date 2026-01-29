@@ -10,7 +10,11 @@ interface ShowDataActionProps {
   onShowData?: (file: FileRecord) => void;
 }
 
-export function ShowDataAction({ selectedFiles, variant = "header", onShowData }: ShowDataActionProps) {
+export function ShowDataAction({
+  selectedFiles,
+  variant = "header",
+  onShowData,
+}: ShowDataActionProps) {
   const canShowData = variant === "row" && selectedFiles.length === 1;
 
   if (!canShowData) {

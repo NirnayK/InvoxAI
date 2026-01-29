@@ -18,4 +18,3 @@ export const generateTallyXml = (invoices: InvoiceData[]): string => {
   invoices.forEach((invoice) => builder.addVoucher(invoice));
   return builder.build();
 };
-

@@ -81,8 +81,7 @@ export const INVOICE_JSON_SCHEMA = {
     // Totals (optional but useful for sanity checks)
     subtotal: {
       anyOf: [{ type: "number" }, { type: "null" }],
-      description:
-        "Invoice subtotal before tax (sum of line item base amounts), if available.",
+      description: "Invoice subtotal before tax (sum of line item base amounts), if available.",
     },
     "tax total": {
       anyOf: [{ type: "number" }, { type: "null" }],
@@ -109,8 +108,7 @@ export const INVOICE_JSON_SCHEMA = {
           },
           name: {
             type: ["string", "null"],
-            description:
-              "Short item name (can be mapped to Tally STOCKITEMNAME if desired).",
+            description: "Short item name (can be mapped to Tally STOCKITEMNAME if desired).",
           },
           "HSN/SAC": {
             type: ["string", "null"],
@@ -122,8 +120,7 @@ export const INVOICE_JSON_SCHEMA = {
           },
           unit: {
             type: ["string", "null"],
-            description:
-              'Unit of measure, e.g. "Pc", "Nos", "Kg" as printed or as inferred.',
+            description: 'Unit of measure, e.g. "Pc", "Nos", "Kg" as printed or as inferred.',
           },
           rate: {
             anyOf: [{ type: "number" }, { type: "null" }],
@@ -144,13 +141,11 @@ export const INVOICE_JSON_SCHEMA = {
           },
           cgst_rate: {
             anyOf: [{ type: "number" }, { type: "null" }],
-            description:
-              "CGST rate in percent for this line (e.g. 9 for 9% CGST).",
+            description: "CGST rate in percent for this line (e.g. 9 for 9% CGST).",
           },
           sgst_rate: {
             anyOf: [{ type: "number" }, { type: "null" }],
-            description:
-              "SGST rate in percent for this line (e.g. 9 for 9% SGST).",
+            description: "SGST rate in percent for this line (e.g. 9 for 9% SGST).",
           },
         },
       },
@@ -159,25 +154,25 @@ export const INVOICE_JSON_SCHEMA = {
 } as const;
 
 export const SYSTEM_INSTRUCTION = [
-  'You are an invoice parser. Read the provided document (PDF or image) and extract ONLY the requested fields.',
+  "You are an invoice parser. Read the provided document (PDF or image) and extract ONLY the requested fields.",
 
-  'Rules:',
-  '1) Your output must strictly conform to the INVOICE_JSON_SCHEMA provided by the client.',
-  '2) Extract all fields defined in the schema when they are clearly present. If a field is missing or cannot be confidently determined, use null (or an empty array for items).',
-  '3) Do NOT invent, guess, or normalize values beyond what is printed. Never hallucinate GSTINs, addresses, dates, or totals.',
-  '4) Strip currency symbols and thousand separators from numeric amounts; return numeric fields as plain numbers when present.',
-  '5) For GST-related fields (cgst, sgst, gst_rate, tax total):',
-  '   - Use only values that are explicitly present or clearly implied on the invoice.',
-  '   - If CGST/SGST or GST rate are not printed or cannot be reliably inferred, set them to null.',
-  '   - Do NOT compute or back-calculate missing taxes or totals.',
-  '6) For totals (subtotal, tax total, grand total): if printed, read them exactly; if not printed, set them to null. Do NOT recompute them from line items.',
-  '7) Prefer ISO date format (YYYY-MM-DD) if you can reliably parse the date; otherwise return the date exactly as printed.',
-  '8) Preserve original spelling and case for all text fields (e.g., seller name, buyer name, addresses, voucher type).',
-  '9) For quantity, rate, and amount, ignore units and currency symbols in the numeric fields but keep units in the dedicated unit field where applicable.',
-  '10) For voucher number, reference number, and reference date, only fill them if they are explicitly present or clearly labeled on the document; otherwise use null.',
-  '11) The items array must always be present (at least an empty array). Each item must follow the item schema exactly.',
-  '12) Return ONLY a single valid JSON object as the response, with no extra text before or after.',
-].join('\n');
+  "Rules:",
+  "1) Your output must strictly conform to the INVOICE_JSON_SCHEMA provided by the client.",
+  "2) Extract all fields defined in the schema when they are clearly present. If a field is missing or cannot be confidently determined, use null (or an empty array for items).",
+  "3) Do NOT invent, guess, or normalize values beyond what is printed. Never hallucinate GSTINs, addresses, dates, or totals.",
+  "4) Strip currency symbols and thousand separators from numeric amounts; return numeric fields as plain numbers when present.",
+  "5) For GST-related fields (cgst, sgst, gst_rate, tax total):",
+  "   - Use only values that are explicitly present or clearly implied on the invoice.",
+  "   - If CGST/SGST or GST rate are not printed or cannot be reliably inferred, set them to null.",
+  "   - Do NOT compute or back-calculate missing taxes or totals.",
+  "6) For totals (subtotal, tax total, grand total): if printed, read them exactly; if not printed, set them to null. Do NOT recompute them from line items.",
+  "7) Prefer ISO date format (YYYY-MM-DD) if you can reliably parse the date; otherwise return the date exactly as printed.",
+  "8) Preserve original spelling and case for all text fields (e.g., seller name, buyer name, addresses, voucher type).",
+  "9) For quantity, rate, and amount, ignore units and currency symbols in the numeric fields but keep units in the dedicated unit field where applicable.",
+  "10) For voucher number, reference number, and reference date, only fill them if they are explicitly present or clearly labeled on the document; otherwise use null.",
+  "11) The items array must always be present (at least an empty array). Each item must follow the item schema exactly.",
+  "12) Return ONLY a single valid JSON object as the response, with no extra text before or after.",
+].join("\n");
 
 export const USER_PROMPT = `
 Given a single invoice document (PDF or image), extract a JSON object that strictly matches INVOICE_JSON_SCHEMA.

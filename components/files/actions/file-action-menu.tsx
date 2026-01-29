@@ -31,7 +31,12 @@ export interface FileActionsProps {
   variant?: "header" | "row";
 }
 
-export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteComplete, variant = "header" }: FileActionsProps) {
+export function FileActionMenu({
+  selectedFiles,
+  onProcessComplete,
+  onDeleteComplete,
+  variant = "header",
+}: FileActionsProps) {
   const [previewFile, setPreviewFile] = useState<FileRecord | null>(null);
   const [dataPreview, setDataPreview] = useState<string>("");
   const [deleteTargets, setDeleteTargets] = useState<FileRecord[]>([]);
@@ -41,8 +46,17 @@ export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteCompl
   const [generatingXml, setGeneratingXml] = useState(false);
   const [processingDialogOpen, setProcessingDialogOpen] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<string>("");
-  const [processingProgress, setProcessingProgress] = useState<{ processed: number; total: number } | null>(null);
-  const { deleteFiles, createXml, appendXml, generateXml: generateXmlMutation, processFiles } = useFileMutations();
+  const [processingProgress, setProcessingProgress] = useState<{
+    processed: number;
+    total: number;
+  } | null>(null);
+  const {
+    deleteFiles,
+    createXml,
+    appendXml,
+    generateXml: generateXmlMutation,
+    processFiles,
+  } = useFileMutations();
 
   const handleShowData = (file: FileRecord) => {
     let content = file.parsedDetails ?? "No extracted data yet.";
@@ -173,7 +187,9 @@ export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteCompl
             return null;
           }
         })
-        .filter((item): item is NonNullable<ReturnType<typeof convertToInvoiceData>> => item !== null);
+        .filter(
+          (item): item is NonNullable<ReturnType<typeof convertToInvoiceData>> => item !== null,
+        );
 
       if (invoices.length === 0) {
         toast.error("No valid invoice data found to export.");
@@ -209,7 +225,11 @@ export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteCompl
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0 text-muted-foreground" aria-label="Open file actions">
+          <Button
+            variant="ghost"
+            className="h-8 w-8 p-0 text-muted-foreground"
+            aria-label="Open file actions"
+          >
             <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
             <span className="sr-only">Open actions</span>
           </Button>
@@ -232,7 +252,11 @@ export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteCompl
 
           <DownloadFilesAction selectedFiles={selectedFiles} />
 
-          <ShowDataAction selectedFiles={selectedFiles} variant={variant} onShowData={handleShowData} />
+          <ShowDataAction
+            selectedFiles={selectedFiles}
+            variant={variant}
+            onShowData={handleShowData}
+          />
 
           <DropdownMenuSeparator />
 
@@ -264,13 +288,22 @@ export function FileActionMenu({ selectedFiles, onProcessComplete, onDeleteCompl
           <div className="relative w-full max-w-md rounded-lg border bg-background p-6 shadow-lg">
             <h2 className="text-lg font-semibold">Delete files</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {deleteTargets.length} file{deleteTargets.length === 1 ? "" : "s"} will be permanently removed.
+              {deleteTargets.length} file{deleteTargets.length === 1 ? "" : "s"} will be permanently
+              removed.
             </p>
             <div className="mt-6 flex justify-end gap-2">
-              <Button variant="outline" onClick={closeDeleteDialog} disabled={deleteFiles.isPending}>
+              <Button
+                variant="outline"
+                onClick={closeDeleteDialog}
+                disabled={deleteFiles.isPending}
+              >
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={confirmDelete} disabled={deleteFiles.isPending}>
+              <Button
+                variant="destructive"
+                onClick={confirmDelete}
+                disabled={deleteFiles.isPending}
+              >
                 {deleteFiles.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Delete
               </Button>

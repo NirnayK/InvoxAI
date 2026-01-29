@@ -69,7 +69,9 @@ function detectMime(file: Blob): string {
   const name = inferName(file);
   if (name && name.includes(".")) {
     const extension = `.${name.split(".").pop()!.toLowerCase()}`;
-    return MIME_BY_EXTENSION[extension as keyof typeof MIME_BY_EXTENSION] ?? "application/octet-stream";
+    return (
+      MIME_BY_EXTENSION[extension as keyof typeof MIME_BY_EXTENSION] ?? "application/octet-stream"
+    );
   }
   return "application/octet-stream";
 }

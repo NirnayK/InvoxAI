@@ -11,7 +11,11 @@ interface ExportToXmlActionProps {
   onRequestExport?: (targets: FileRecord[]) => void;
 }
 
-export function ExportToXmlAction({ selectedFiles, disabled = false, onRequestExport }: ExportToXmlActionProps) {
+export function ExportToXmlAction({
+  selectedFiles,
+  disabled = false,
+  onRequestExport,
+}: ExportToXmlActionProps) {
   const { processedFiles } = useFileSelection(selectedFiles);
   const hasSelection = processedFiles.length === selectedFiles.length && processedFiles.length > 0;
   const isDisabled = disabled || !hasSelection;

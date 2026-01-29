@@ -52,9 +52,7 @@ export class GeminiInvoiceClient {
   }
 }
 
-const toInlineData = async (
-  file: NormalizedFile,
-): Promise<{ mimeType: string; data: string }> => {
+const toInlineData = async (file: NormalizedFile): Promise<{ mimeType: string; data: string }> => {
   if (typeof Blob !== "undefined" && file.source instanceof Blob) {
     const buffer = await file.source.arrayBuffer();
     const bytes = new Uint8Array(buffer);

@@ -135,8 +135,11 @@ export function FileUploadPanel({
         onDragOver={(event) => handleDrag(event, true)}
         onDragLeave={(event) => handleDrag(event, false)}
         onDrop={handleDrop}
-        className={`rounded-[28px] border-2 border-dashed p-10 text-center transition ${isDragging ? "border-primary/60 bg-primary/10" : "border-border bg-muted/40 dark:bg-muted/10"
-          }`}
+        className={`rounded-[28px] border-2 border-dashed p-10 text-center transition ${
+          isDragging
+            ? "border-primary/60 bg-primary/10"
+            : "border-border bg-muted/40 dark:bg-muted/10"
+        }`}
       >
         <input
           ref={inputRef}

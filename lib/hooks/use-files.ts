@@ -32,24 +32,14 @@ export function useFileMutations() {
   });
 
   const updateMultipleStatusMutation = useMutation({
-    mutationFn: ({
-      fileIds,
-      status,
-    }: {
-      fileIds: string[];
-      status: FileStatus;
-    }) => FileCommands.updateMultipleStatus(fileIds, status),
+    mutationFn: ({ fileIds, status }: { fileIds: string[]; status: FileStatus }) =>
+      FileCommands.updateMultipleStatus(fileIds, status),
     onSuccess: invalidateFiles,
   });
 
   const updateParsedDetailsMutation = useMutation({
-    mutationFn: ({
-      fileId,
-      parsedDetails,
-    }: {
-      fileId: string;
-      parsedDetails: string;
-    }) => FileCommands.updateParsedDetails(fileId, parsedDetails),
+    mutationFn: ({ fileId, parsedDetails }: { fileId: string; parsedDetails: string }) =>
+      FileCommands.updateParsedDetails(fileId, parsedDetails),
     onSuccess: invalidateFiles,
   });
 
@@ -59,13 +49,8 @@ export function useFileMutations() {
   });
 
   const createXmlMutation = useMutation({
-    mutationFn: ({
-      fileIds,
-      xmlName,
-    }: {
-      fileIds: string[];
-      xmlName: string;
-    }) => createXmlForFiles(fileIds, xmlName),
+    mutationFn: ({ fileIds, xmlName }: { fileIds: string[]; xmlName: string }) =>
+      createXmlForFiles(fileIds, xmlName),
     onSuccess: () => {
       invalidateFiles();
       queryClient.invalidateQueries({ queryKey: ["xml-files"] });

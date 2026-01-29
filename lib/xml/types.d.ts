@@ -31,4 +31,3 @@ export type InvoiceData = {
   "grand total": number | null;
   items: InvoiceItem[];
 };
-
