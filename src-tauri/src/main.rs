@@ -17,6 +17,7 @@ use tauri_plugin_dialog::init as DialogPlugin;
 use tauri_plugin_sql::Builder as SqlPluginBuilder;
 use tauri_plugin_store::Builder as StorePluginBuilder;
 use std::time::Duration;
+use tokio::time::sleep;
 
 fn main() {
     tauri::Builder::default()
@@ -31,7 +32,7 @@ fn main() {
             tauri::async_runtime::spawn(async move {
                 loop {
                     let _ = reset_gemini_model_usage_if_new_day();
-                    tauri::async_runtime::sleep(Duration::from_secs(60 * 60)).await;
+                    sleep(Duration::from_secs(60 * 60)).await;
                 }
             });
             Ok(())
